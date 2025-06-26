@@ -10,7 +10,9 @@ linting tools like Detekt and Android Lint.
 - **Android Lint Baseline Detection**: Automatically finds `lint-baseline.xml` files in project
   modules
 - **Multi-Module Support**: Scans root project and all subprojects for baseline files
-- **Configurable**: Enable/disable detection for specific tools and customize baseline file names
+- **Configurable Scoring**: Customize scoring rules for different issue types with severity-based
+  penalties
+- **Smart Defaults**: Pre-configured scoring rules for common Detekt issues
 - **Separate Scoring**: Maintains separate scores for Detekt and Lint issues
 
 ## Quick Start
@@ -37,6 +39,11 @@ baselineScores {
     // Android Lint configuration
     lintEnabled = true
     lintBaselineFileName = "lint-baseline.xml"
+    
+    // Scoring configuration
+    defaultIssuePoints = -5
+    issueScore("ComplexMethod", -20)
+    issueScore("UnsafeCallOnNullableType", -50)
 }
 ```
 
@@ -67,6 +74,35 @@ Generates baseline scores for all discovered baseline files.
 ./gradlew generateBaselineScores
 ```
 
+**Example Output:**
+
+```
+Generating baseline scores for 2 baseline file(s)...
+Default issue points: -5
+
+[DETEKT] Module: app
+  Total issues: 15, Total score: -89
+  Issue breakdown:
+    FunctionNaming: 8 issues × -5 points = -40
+    LongParameterList: 2 issues × -10 points = -20
+    MagicNumber: 3 issues × -3 points = -9
+    UnusedPrivateMember: 2 issues × -7 points = -14
+
+==================================================
+PROJECT SUMMARY
+==================================================
+Total project score: -124
+Total modules analyzed: 2
+Total issues: 20
+
+Most common issues:
+  FunctionNaming: 8 occurrences
+  MagicNumber: 3 occurrences
+  LongParameterList: 2 occurrences
+
+Output file: baseline-scores.json
+```
+
 ### `validateBaselineScores`
 
 Validates current scores against baseline thresholds.
@@ -75,7 +111,9 @@ Validates current scores against baseline thresholds.
 ./gradlew validateBaselineScores
 ```
 
-## Configuration Options
+## Configuration
+
+### Basic Configuration Options
 
 | Property                 | Default                         | Description                            |
 |--------------------------|---------------------------------|----------------------------------------|
@@ -88,6 +126,115 @@ Validates current scores against baseline thresholds.
 | `detektBaselineFileName` | `"detekt-baseline.xml"`         | Detekt baseline file name              |
 | `lintEnabled`            | `true`                          | Enable Android Lint baseline detection |
 | `lintBaselineFileName`   | `"lint-baseline.xml"`           | Lint baseline file name                |
+| `defaultIssuePoints`     | `-5`                            | Default score for any issue type       |
+
+### Custom Scoring Rules
+
+#### Individual Issue Configuration
+
+```kotlin
+baselineScores {
+    defaultIssuePoints = -5
+    
+    // Configure individual issue types
+    issueScore("FunctionNaming", -3)
+    issueScore("ComplexMethod", -20)
+    issueScore("UnsafeCallOnNullableType", -50)
+}
+```
+
+#### Bulk Issue Configuration
+
+```kotlin
+baselineScores {
+    defaultIssuePoints = -5
+    
+    // Configure multiple issues at once
+    issueScores(mapOf(
+        "FunctionNaming" to -3,
+        "LongParameterList" to -10,
+        "MagicNumber" to -2,
+        "UnusedPrivateMember" to -7,
+        "ComplexMethod" to -15
+    ))
+}
+```
+
+#### Severity-Based Configuration
+
+```kotlin
+baselineScores {
+    defaultIssuePoints = -5
+    
+    // Critical issues (security, potential bugs)
+    issueScores(mapOf(
+        "UnsafeCallOnNullableType" to -50,
+        "ExceptionRaisedInUnexpectedLocation" to -30,
+        "TooGenericExceptionCaught" to -15
+    ))
+    
+    // Major issues (maintainability problems)
+    issueScores(mapOf(
+        "ComplexMethod" to -20,
+        "LongMethod" to -15,
+        "LargeClass" to -18,
+        "TooManyFunctions" to -12
+    ))
+    
+    // Minor issues (style and convention)
+    issueScores(mapOf(
+        "FunctionNaming" to -1,
+        "MagicNumber" to -1
+    ))
+}
+```
+
+#### Progressive Improvement Strategy
+
+```kotlin
+baselineScores {
+    // Start with very low penalties for gradual improvement
+    defaultIssuePoints = -1
+    
+    // Phase 1: Focus only on critical issues
+    issueScores(mapOf(
+        "UnsafeCallOnNullableType" to -100,  // Blocking
+        "ExceptionRaisedInUnexpectedLocation" to -100,
+        "NullPointerException" to -50
+    ))
+    
+    // Phase 2: Address major maintainability issues (lower penalties)
+    issueScores(mapOf(
+        "ComplexMethod" to -10,
+        "LongMethod" to -8,
+        "LargeClass" to -12
+    ))
+    
+    // Phase 3: Style issues get minimal penalties
+    issueScores(mapOf(
+        "FunctionNaming" to -1,
+        "MagicNumber" to -1
+    ))
+}
+```
+
+### Default Scoring Rules
+
+The plugin comes with sensible defaults for common Detekt issues:
+
+| Issue Type                            | Default Points | Reasoning                     |
+|---------------------------------------|----------------|-------------------------------|
+| `UnsafeCallOnNullableType`            | -20            | Security/safety concern       |
+| `ExceptionRaisedInUnexpectedLocation` | -25            | Critical error handling issue |
+| `ComplexMethod`                       | -15            | Major maintainability issue   |
+| `LongMethod`                          | -10            | Maintainability issue         |
+| `LongParameterList`                   | -10            | API design issue              |
+| `UnusedPrivateMember`                 | -7             | Dead code                     |
+| `FunctionNaming`                      | -5             | Style/convention              |
+| `MagicNumber`                         | -3             | Code clarity                  |
+| `UnnecessaryLet`                      | -3             | Code clarity                  |
+
+You can override any of these defaults using the configuration methods above.
 
 ## Baseline File Detection
 
@@ -137,4 +284,3 @@ The plugin maintains separate scores for Detekt and Android Lint because:
 ```bash
 ./gradlew publishToMavenLocal
 ```
-
