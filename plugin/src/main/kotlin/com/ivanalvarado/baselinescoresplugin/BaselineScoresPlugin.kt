@@ -10,6 +10,7 @@ class BaselineScoresPlugin : Plugin<Project> {
             project.extensions.create("baselineScores", BaselineScoresExtension::class.java)
 
         val detector = BaselineFileDetector()
+        val calculator = BaselineScoreCalculator()
 
         // Register tasks
         project.task("findBaselineFiles") {
@@ -36,10 +37,18 @@ class BaselineScoresPlugin : Plugin<Project> {
                 val baselineFiles = detector.findAllBaselineFiles(project.rootProject, extension)
                 println("Generating baseline scores for ${baselineFiles.size} baseline file(s)...")
 
+                var totalScore = 0
+                val scores = mutableListOf<BaselineScore>()
+
                 baselineFiles.forEach { info ->
-                    println("Processing ${info.type} baseline for module '${info.module}': ${info.file.name}")
+                    val score = calculator.calculateScore(info)
+                    scores.add(score)
+                    totalScore += score.score
+
+                    println("  [${info.type}] ${info.module}: ${score.issueCount} issues, score: ${score.score}")
                 }
 
+                println("\nTotal project score: $totalScore")
                 println("Output file: ${extension.outputFile}")
             }
         }

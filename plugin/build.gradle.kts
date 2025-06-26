@@ -10,6 +10,7 @@ version = "1.0.0"
 dependencies {
     implementation(gradleApi())
     implementation(kotlin("stdlib"))
+    implementation("org.dom4j:dom4j:2.1.4")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
