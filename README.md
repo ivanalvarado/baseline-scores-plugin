@@ -51,7 +51,7 @@ baselineScores {
 
 ### `findBaselineFiles`
 
-Discovers all baseline files in the project and its modules.
+Discovers all baseline files in the current project and its subprojects.
 
 ```bash
 ./gradlew findBaselineFiles
@@ -68,13 +68,19 @@ Found 3 baseline file(s):
 
 ### `generateBaselineScores`
 
-Generates baseline scores for all discovered baseline files.
+Generates baseline scores for all discovered baseline files and outputs results to JSON.
 
 ```bash
 ./gradlew generateBaselineScores
 ```
 
-**Example Output:**
+For specific modules:
+
+```bash
+./gradlew :feature:bookmarks:generateBaselineScores
+```
+
+**Console Output:**
 
 ```
 Generating baseline scores for 2 baseline file(s)...
@@ -100,8 +106,88 @@ Most common issues:
   MagicNumber: 3 occurrences
   LongParameterList: 2 occurrences
 
-Output file: baseline-scores.json
+JSON results written to: /path/to/project/build/baseline-scores/baseline-scores-results.json
 ```
+
+**JSON Output Location:**
+
+- When run from root: `build/baseline-scores/baseline-scores-results.json`
+- When run from submodule: `{module}/build/baseline-scores/baseline-scores-results.json`
+
+**Example JSON Output:**
+
+For a baseline file containing:
+
+```xml
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <CurrentIssues>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Composable internal fun BookmarksRoute(...)</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun BookmarksGrid(...)</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun EmptyState(...)</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun LoadingState(...)</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Preview @Composable private fun BookmarksGridPreview(...)</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Preview @Composable private fun EmptyStatePreview()</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Preview @Composable private fun LoadingStatePreview()</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@VisibleForTesting @Composable internal fun BookmarksScreen(...)</ID>
+    <ID>LongParameterList:BookmarksScreen.kt$( feedState: NewsFeedUiState, ... )</ID>
+    <ID>MagicNumber:BookmarksViewModel.kt$BookmarksViewModel$5_000</ID>
+  </CurrentIssues>
+</SmellBaseline>
+```
+
+The plugin generates:
+
+```json
+{
+  "generatedAt": "2025-01-07T15:30:45.123456",
+  "projectTotalScore": -79,
+  "totalIssues": 10,
+  "results": [
+    {
+      "class": "BookmarksScreen.kt",
+      "issues": [
+        {
+          "issue": "FunctionNaming",
+          "occurrences": 8,
+          "debt": -5,
+          "score": -40
+        },
+        {
+          "issue": "LongParameterList",
+          "occurrences": 1,
+          "debt": -10,
+          "score": -10
+        }
+      ]
+    },
+    {
+      "class": "BookmarksViewModel.kt",
+      "issues": [
+        {
+          "issue": "MagicNumber",
+          "occurrences": 1,
+          "debt": -3,
+          "score": -3
+        }
+      ]
+    }
+  ]
+}
+```
+
+**JSON Structure Explanation:**
+
+- `generatedAt`: Timestamp when the report was generated
+- `projectTotalScore`: Sum of all issue scores across all files
+- `totalIssues`: Total number of individual issues found
+- `results`: Array of files with their associated issues
+  - `class`: File name where issues were found
+  - `issues`: Array of issue types in that file
+    - `issue`: Type of issue (e.g., "FunctionNaming")
+    - `occurrences`: Number of times this issue appears in this file
+    - `debt`: Points deducted per occurrence (negative value)
+    - `score`: Total points for this issue type in this file (occurrences × debt)
 
 ### `validateBaselineScores`
 
@@ -110,6 +196,17 @@ Validates current scores against baseline thresholds.
 ```bash
 ./gradlew validateBaselineScores
 ```
+
+## Multi-Module Behavior
+
+The plugin now operates on the project where the task is executed:
+
+- **Root project execution**: `./gradlew generateBaselineScores` processes baseline files in the
+  root project and all its subprojects
+- **Submodule execution**: `./gradlew :feature:bookmarks:generateBaselineScores` processes only
+  baseline files in the `feature:bookmarks` module and its subprojects
+- **Output location**: JSON results are always written to the `build` directory of the project where
+  the task was executed
 
 ## Configuration
 
@@ -218,7 +315,7 @@ baselineScores {
 }
 ```
 
-### Default Scoring Rules
+## Default Scoring Rules
 
 The plugin comes with sensible defaults for common Detekt issues:
 
