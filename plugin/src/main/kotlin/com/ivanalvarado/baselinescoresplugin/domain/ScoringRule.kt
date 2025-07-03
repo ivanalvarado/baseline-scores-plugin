@@ -34,6 +34,17 @@ data class ScoringResult(
 )
 
 /**
+ * Represents file-based scoring results with issues grouped by file name
+ */
+data class FileScoringResult(
+    val module: String,
+    val type: BaselineType,
+    val fileBreakdown: Map<String, Map<String, IssueScore>>,
+    val totalScore: Int,
+    val totalIssues: Int
+)
+
+/**
  * Represents the score for a specific issue type
  */
 data class IssueScore(

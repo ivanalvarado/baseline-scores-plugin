@@ -10,6 +10,11 @@ interface BaselineScorer {
         baselineFileInfo: BaselineFileInfo,
         configuration: ScoringConfiguration
     ): ScoringResult
+
+    fun scoreBaselineWithFiles(
+        baselineFileInfo: BaselineFileInfo,
+        configuration: ScoringConfiguration
+    ): FileScoringResult
 }
 
 /**
@@ -29,4 +34,11 @@ interface ScoreCalculator {
         module: String,
         type: com.ivanalvarado.baselinescoresplugin.BaselineType
     ): ScoringResult
+
+    fun calculateFileBasedScore(
+        fileIssueBreakdown: Map<String, Map<String, Int>>,
+        configuration: ScoringConfiguration,
+        module: String,
+        type: com.ivanalvarado.baselinescoresplugin.BaselineType
+    ): FileScoringResult
 }

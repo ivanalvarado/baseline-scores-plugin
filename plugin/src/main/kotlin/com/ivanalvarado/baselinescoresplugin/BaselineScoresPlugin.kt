@@ -1,9 +1,14 @@
 package com.ivanalvarado.baselinescoresplugin
 
 import com.ivanalvarado.baselinescoresplugin.application.BaselineScorerImpl
-import com.ivanalvarado.baselinescoresplugin.domain.ScoringResult
+import com.ivanalvarado.baselinescoresplugin.domain.FileScoringResult
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.io.File
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class BaselineScoresPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -19,7 +24,7 @@ class BaselineScoresPlugin : Plugin<Project> {
             it.group = "baseline"
             it.description = "Find all baseline files in the project and its modules"
             it.doLast {
-                val baselineFiles = detector.findAllBaselineFiles(project.rootProject, extension)
+                val baselineFiles = detector.findAllBaselineFiles(project, extension)
 
                 if (baselineFiles.isEmpty()) {
                     println("No baseline files found in the project.")
@@ -36,17 +41,17 @@ class BaselineScoresPlugin : Plugin<Project> {
             it.group = "baseline"
             it.description = "Generate baseline scores for the project"
             it.doLast {
-                val baselineFiles = detector.findAllBaselineFiles(project.rootProject, extension)
+                val baselineFiles = detector.findAllBaselineFiles(project, extension)
                 val scoringConfiguration = extension.getScoringConfiguration()
 
                 println("Generating baseline scores for ${baselineFiles.size} baseline file(s)...")
                 println("Default issue points: ${extension.defaultIssuePoints}")
 
                 var totalProjectScore = 0
-                val moduleScores = mutableListOf<ScoringResult>()
+                val moduleScores = mutableListOf<FileScoringResult>()
 
                 baselineFiles.forEach { info ->
-                    val result = scorer.scoreBaseline(info, scoringConfiguration)
+                    val result = scorer.scoreBaselineWithFiles(info, scoringConfiguration)
                     moduleScores.add(result)
                     totalProjectScore += result.totalScore
 
@@ -54,6 +59,10 @@ class BaselineScoresPlugin : Plugin<Project> {
                 }
 
                 printSummary(totalProjectScore, moduleScores)
+
+                // Generate JSON output
+                generateJsonOutput(project, moduleScores, totalProjectScore)
+
                 println("Output file: ${extension.outputFile}")
             }
         }
@@ -68,21 +77,69 @@ class BaselineScoresPlugin : Plugin<Project> {
         }
     }
 
-    private fun printModuleScore(result: ScoringResult) {
+    private fun generateJsonOutput(
+        project: Project,
+        moduleScores: List<FileScoringResult>,
+        totalProjectScore: Int
+    ) {
+        val buildDir = File(project.buildDir, "baseline-scores")
+        buildDir.mkdirs()
+
+        val outputFile = File(buildDir, "baseline-scores-results.json")
+
+        val results = mutableListOf<Map<String, Any>>()
+
+        moduleScores.forEach { result ->
+            result.fileBreakdown.forEach { (fileName, issueBreakdown) ->
+                val issues = issueBreakdown.map { (_, issueScore) ->
+                    mapOf(
+                        "issue" to issueScore.issueType,
+                        "occurrences" to issueScore.count,
+                        "debt" to issueScore.pointsPerIssue,
+                        "score" to issueScore.totalPoints
+                    )
+                }
+
+                results.add(
+                    mapOf(
+                        "class" to fileName,
+                        "issues" to issues
+                    )
+                )
+            }
+        }
+
+        val finalOutput = mapOf(
+            "generatedAt" to LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            "projectTotalScore" to totalProjectScore,
+            "totalIssues" to moduleScores.sumOf { it.totalIssues },
+            "results" to results
+        )
+
+        val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, finalOutput)
+
+        println("JSON results written to: ${outputFile.absolutePath}")
+    }
+
+    private fun printModuleScore(result: FileScoringResult) {
         println("\n[${result.type}] Module: ${result.module}")
         println("  Total issues: ${result.totalIssues}, Total score: ${result.totalScore}")
 
-        if (result.issueBreakdown.isNotEmpty()) {
-            println("  Issue breakdown:")
-            result.issueBreakdown.values
-                .sortedByDescending { it.count }
-                .forEach { issue ->
-                    println("    ${issue.issueType}: ${issue.count} issues × ${issue.pointsPerIssue} points = ${issue.totalPoints}")
-                }
+        if (result.fileBreakdown.isNotEmpty()) {
+            println("  File breakdown:")
+            result.fileBreakdown.forEach { (fileName, issueBreakdown) ->
+                println("    $fileName:")
+                issueBreakdown.values
+                    .sortedByDescending { it.count }
+                    .forEach { issue ->
+                        println("      ${issue.issueType}: ${issue.count} issues × ${issue.pointsPerIssue} points = ${issue.totalPoints}")
+                    }
+            }
         }
     }
 
-    private fun printSummary(totalScore: Int, moduleScores: List<ScoringResult>) {
+    private fun printSummary(totalScore: Int, moduleScores: List<FileScoringResult>) {
         println("\n" + "=".repeat(50))
         println("PROJECT SUMMARY")
         println("=".repeat(50))
@@ -92,9 +149,11 @@ class BaselineScoresPlugin : Plugin<Project> {
 
         val issueTypeSummary = mutableMapOf<String, Int>()
         moduleScores.forEach { result ->
-            result.issueBreakdown.forEach { (issueType, issueScore) ->
-                issueTypeSummary[issueType] =
-                    issueTypeSummary.getOrDefault(issueType, 0) + issueScore.count
+            result.fileBreakdown.forEach { (_, issueBreakdown) ->
+                issueBreakdown.forEach { (issueType, issueScore) ->
+                    issueTypeSummary[issueType] =
+                        issueTypeSummary.getOrDefault(issueType, 0) + issueScore.count
+                }
             }
         }
 

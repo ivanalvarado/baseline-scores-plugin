@@ -11,6 +11,8 @@ dependencies {
     implementation(gradleApi())
     implementation(kotlin("stdlib"))
     implementation("org.dom4j:dom4j:2.1.4")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))

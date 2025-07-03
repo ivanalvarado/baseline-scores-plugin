@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+    <ManuallySuppressedIssues />
+    <CurrentIssues>
+        <ID>FunctionNaming:BookmarksScreen.kt$@Composable internal fun BookmarksRoute( onTopicClick:
+            (String) -&gt; Unit, onShowSnackbar: suspend (String, String?) -&gt; Boolean, modifier:
+            Modifier = Modifier, viewModel: BookmarksViewModel = hiltViewModel(), )
+        </ID>
+        <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun BookmarksGrid( feedState:
+            NewsFeedUiState, removeFromBookmarks: (String) -&gt; Unit, onNewsResourceViewed:
+            (String) -&gt; Unit, onTopicClick: (String) -&gt; Unit, modifier: Modifier = Modifier, )
+        </ID>
+        <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun EmptyState(modifier: Modifier
+            = Modifier)
+        </ID>
+        <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun LoadingState(modifier:
+            Modifier = Modifier)
+        </ID>
+        <ID>FunctionNaming:BookmarksScreen.kt$@Preview @Composable private fun BookmarksGridPreview(
+            @PreviewParameter(UserNewsResourcePreviewParameterProvider::class) userNewsResources:
+            List&lt;UserNewsResource&gt;, )
+        </ID>
+        <ID>FunctionNaming:BookmarksScreen.kt$@Preview @Composable private fun EmptyStatePreview()
+        </ID>
+        <ID>FunctionNaming:BookmarksScreen.kt$@Preview @Composable private fun
+            LoadingStatePreview()
+        </ID>
+        <ID>FunctionNaming:BookmarksScreen.kt$@VisibleForTesting(otherwise =
+            VisibleForTesting.PRIVATE) @Composable internal fun BookmarksScreen( feedState:
+            NewsFeedUiState, onShowSnackbar: suspend (String, String?) -&gt; Boolean,
+            removeFromBookmarks: (String) -&gt; Unit, onNewsResourceViewed: (String) -&gt; Unit,
+            onTopicClick: (String) -&gt; Unit, modifier: Modifier = Modifier,
+            shouldDisplayUndoBookmark: Boolean = false, undoBookmarkRemoval: () -&gt; Unit = {},
+            clearUndoState: () -&gt; Unit = {}, )
+        </ID>
+        <ID>LongParameterList:BookmarksScreen.kt$( feedState: NewsFeedUiState, onShowSnackbar:
+            suspend (String, String?) -&gt; Boolean, removeFromBookmarks: (String) -&gt; Unit,
+            onNewsResourceViewed: (String) -&gt; Unit, onTopicClick: (String) -&gt; Unit, modifier:
+            Modifier = Modifier, shouldDisplayUndoBookmark: Boolean = false, undoBookmarkRemoval: ()
+            -&gt; Unit = {}, clearUndoState: () -&gt; Unit = {}, )
+        </ID>
+        <ID>MagicNumber:BookmarksViewModel.kt$BookmarksViewModel$5_000</ID>
+    </CurrentIssues>
+</SmellBaseline>
