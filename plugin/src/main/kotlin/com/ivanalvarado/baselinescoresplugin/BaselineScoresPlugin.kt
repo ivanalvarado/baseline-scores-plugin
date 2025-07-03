@@ -4,6 +4,11 @@ import com.ivanalvarado.baselinescoresplugin.application.BaselineScorerImpl
 import com.ivanalvarado.baselinescoresplugin.domain.ScoringResult
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.io.File
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class BaselineScoresPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -54,6 +59,10 @@ class BaselineScoresPlugin : Plugin<Project> {
                 }
 
                 printSummary(totalProjectScore, moduleScores)
+
+                // Generate JSON output
+                generateJsonOutput(project, moduleScores, totalProjectScore)
+
                 println("Output file: ${extension.outputFile}")
             }
         }
@@ -66,6 +75,44 @@ class BaselineScoresPlugin : Plugin<Project> {
                 println("Threshold: ${extension.threshold}")
             }
         }
+    }
+
+    private fun generateJsonOutput(
+        project: Project,
+        moduleScores: List<ScoringResult>,
+        totalProjectScore: Int
+    ) {
+        val buildDir = File(project.rootProject.buildDir, "baseline-scores")
+        buildDir.mkdirs()
+
+        val outputFile = File(buildDir, "baseline-scores-results.json")
+
+        val jsonResults = mutableListOf<Map<String, Any>>()
+
+        moduleScores.forEach { result ->
+            result.issueBreakdown.forEach { (issueType, issueScore) ->
+                val issueResult = mapOf(
+                    "issue" to issueType,
+                    "score" to issueScore.totalPoints,
+                    "class" to result.module,
+                    "totalScore" to result.totalScore
+                )
+                jsonResults.add(issueResult)
+            }
+        }
+
+        val finalOutput = mapOf(
+            "generatedAt" to LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            "projectTotalScore" to totalProjectScore,
+            "totalModules" to moduleScores.size,
+            "totalIssues" to moduleScores.sumOf { it.totalIssues },
+            "results" to jsonResults
+        )
+
+        val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, finalOutput)
+
+        println("JSON results written to: ${outputFile.absolutePath}")
     }
 
     private fun printModuleScore(result: ScoringResult) {
