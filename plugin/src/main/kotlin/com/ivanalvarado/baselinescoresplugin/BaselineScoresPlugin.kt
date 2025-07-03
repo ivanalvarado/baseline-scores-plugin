@@ -1,170 +1,106 @@
 package com.ivanalvarado.baselinescoresplugin
 
-import com.ivanalvarado.baselinescoresplugin.application.BaselineScorerImpl
-import com.ivanalvarado.baselinescoresplugin.domain.FileScoringResult
+import com.ivanalvarado.baselinescoresplugin.application.DefaultDomainServiceFactory
+import com.ivanalvarado.baselinescoresplugin.application.FindBaselineFilesUseCase
+import com.ivanalvarado.baselinescoresplugin.application.GenerateBaselineScoresUseCase
+import com.ivanalvarado.baselinescoresplugin.application.ValidateBaselineScoresUseCase
+import com.ivanalvarado.baselinescoresplugin.domain.BaselineProcessingException
+import com.ivanalvarado.baselinescoresplugin.domain.DomainServiceFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import java.io.File
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class BaselineScoresPlugin : Plugin<Project> {
+
+    private val serviceFactory: DomainServiceFactory = DefaultDomainServiceFactory()
+    private val baselineFileDetector = BaselineFileDetector()
+
     override fun apply(project: Project) {
-        // Register the extension
         val extension =
             project.extensions.create("baselineScores", BaselineScoresExtension::class.java)
 
-        val detector = BaselineFileDetector()
-        val scorer = BaselineScorerImpl()
+        registerFindBaselineFilesTask(project, extension)
+        registerGenerateBaselineScoresTask(project, extension)
+        registerValidateBaselineScoresTask(project, extension)
+    }
 
-        // Register tasks
+    private fun registerFindBaselineFilesTask(
+        project: Project,
+        extension: BaselineScoresExtension
+    ) {
         project.task("findBaselineFiles") {
             it.group = "baseline"
             it.description = "Find all baseline files in the project and its modules"
             it.doLast {
-                val baselineFiles = detector.findAllBaselineFiles(project, extension)
-
-                if (baselineFiles.isEmpty()) {
-                    println("No baseline files found in the project.")
-                } else {
-                    println("Found ${baselineFiles.size} baseline file(s):")
-                    baselineFiles.forEach { info ->
-                        println("  [${info.type}] ${info.module}: ${info.file.absolutePath}")
-                    }
+                try {
+                    val useCase = FindBaselineFilesUseCase(
+                        baselineFileDetector,
+                        serviceFactory.createConsoleReporter()
+                    )
+                    useCase.execute(project, extension)
+                } catch (e: BaselineProcessingException) {
+                    handleError("Error finding baseline files", e)
                 }
             }
         }
+    }
 
+    private fun registerGenerateBaselineScoresTask(
+        project: Project,
+        extension: BaselineScoresExtension
+    ) {
         project.task("generateBaselineScores") {
             it.group = "baseline"
             it.description = "Generate baseline scores for the project"
             it.doLast {
-                val baselineFiles = detector.findAllBaselineFiles(project, extension)
-                val scoringConfiguration = extension.getScoringConfiguration()
+                try {
+                    val useCase = GenerateBaselineScoresUseCase(
+                        baselineFileDetector,
+                        serviceFactory.createBaselineScorer(),
+                        serviceFactory.createReportGenerator(),
+                        serviceFactory.createConsoleReporter()
+                    )
 
-                println("Generating baseline scores for ${baselineFiles.size} baseline file(s)...")
-                println("Default issue points: ${extension.defaultIssuePoints}")
-
-                var totalProjectScore = 0
-                val moduleScores = mutableListOf<FileScoringResult>()
-
-                baselineFiles.forEach { info ->
-                    val result = scorer.scoreBaselineWithFiles(info, scoringConfiguration)
-                    moduleScores.add(result)
-                    totalProjectScore += result.totalScore
-
-                    printModuleScore(result)
+                    val outputPath = useCase.execute(project, extension)
+                    println("Output file: $outputPath")
+                } catch (e: BaselineProcessingException) {
+                    handleError("Error generating baseline scores", e)
                 }
-
-                printSummary(totalProjectScore, moduleScores)
-
-                // Generate JSON output
-                generateJsonOutput(project, moduleScores, totalProjectScore)
-
-                println("Output file: ${extension.outputFile}")
             }
         }
+    }
 
+    private fun registerValidateBaselineScoresTask(
+        project: Project,
+        extension: BaselineScoresExtension
+    ) {
         project.task("validateBaselineScores") {
             it.group = "baseline"
             it.description = "Validate current scores against baseline"
             it.doLast {
-                println("Validating baseline scores...")
-                println("Threshold: ${extension.threshold}")
-            }
-        }
-    }
-
-    private fun generateJsonOutput(
-        project: Project,
-        moduleScores: List<FileScoringResult>,
-        totalProjectScore: Int
-    ) {
-        val buildDir = File(project.buildDir, "baseline-scores")
-        buildDir.mkdirs()
-
-        val outputFile = File(buildDir, "baseline-scores-results.json")
-
-        val results = mutableListOf<Map<String, Any>>()
-
-        moduleScores.forEach { result ->
-            result.fileBreakdown.forEach { (fileName, issueBreakdown) ->
-                val issues = issueBreakdown.map { (_, issueScore) ->
-                    mapOf(
-                        "issue" to issueScore.issueType,
-                        "occurrences" to issueScore.count,
-                        "debt" to issueScore.pointsPerIssue,
-                        "score" to issueScore.totalPoints
+                try {
+                    val useCase = ValidateBaselineScoresUseCase(
+                        baselineFileDetector,
+                        serviceFactory.createBaselineScorer(),
+                        serviceFactory.createConsoleReporter()
                     )
-                }
 
-                results.add(
-                    mapOf(
-                        "class" to fileName,
-                        "issues" to issues
-                    )
-                )
-            }
-        }
+                    val result = useCase.execute(project, extension)
 
-        val finalOutput = mapOf(
-            "generatedAt" to LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-            "projectTotalScore" to totalProjectScore,
-            "totalIssues" to moduleScores.sumOf { it.totalIssues },
-            "results" to results
-        )
-
-        val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
-        objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, finalOutput)
-
-        println("JSON results written to: ${outputFile.absolutePath}")
-    }
-
-    private fun printModuleScore(result: FileScoringResult) {
-        println("\n[${result.type}] Module: ${result.module}")
-        println("  Total issues: ${result.totalIssues}, Total score: ${result.totalScore}")
-
-        if (result.fileBreakdown.isNotEmpty()) {
-            println("  File breakdown:")
-            result.fileBreakdown.forEach { (fileName, issueBreakdown) ->
-                println("    $fileName:")
-                issueBreakdown.values
-                    .sortedByDescending { it.count }
-                    .forEach { issue ->
-                        println("      ${issue.issueType}: ${issue.count} issues × ${issue.pointsPerIssue} points = ${issue.totalPoints}")
+                    if (!result.isValid) {
+                        throw RuntimeException("Baseline validation failed: ${result.message}")
                     }
+                } catch (e: BaselineProcessingException) {
+                    handleError("Error validating baseline scores", e)
+                }
             }
         }
     }
 
-    private fun printSummary(totalScore: Int, moduleScores: List<FileScoringResult>) {
-        println("\n" + "=".repeat(50))
-        println("PROJECT SUMMARY")
-        println("=".repeat(50))
-        println("Total project score: $totalScore")
-        println("Total modules analyzed: ${moduleScores.size}")
-        println("Total issues: ${moduleScores.sumOf { it.totalIssues }}")
-
-        val issueTypeSummary = mutableMapOf<String, Int>()
-        moduleScores.forEach { result ->
-            result.fileBreakdown.forEach { (_, issueBreakdown) ->
-                issueBreakdown.forEach { (issueType, issueScore) ->
-                    issueTypeSummary[issueType] =
-                        issueTypeSummary.getOrDefault(issueType, 0) + issueScore.count
-                }
-            }
+    private fun handleError(message: String, exception: BaselineProcessingException) {
+        println("$message: ${exception.message}")
+        exception.cause?.let { cause ->
+            println("Caused by: ${cause.message}")
         }
-
-        if (issueTypeSummary.isNotEmpty()) {
-            println("\nMost common issues:")
-            issueTypeSummary.toList()
-                .sortedByDescending { it.second }
-                .take(5)
-                .forEach { (issueType, count) ->
-                    println("  $issueType: $count occurrences")
-                }
-        }
+        throw exception
     }
 }

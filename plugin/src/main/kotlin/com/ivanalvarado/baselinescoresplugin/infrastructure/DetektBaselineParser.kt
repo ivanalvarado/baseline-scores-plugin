@@ -2,9 +2,12 @@ package com.ivanalvarado.baselinescoresplugin.infrastructure
 
 import com.ivanalvarado.baselinescoresplugin.BaselineFileInfo
 import com.ivanalvarado.baselinescoresplugin.domain.BaselineParser
+import com.ivanalvarado.baselinescoresplugin.domain.BaselineProcessingException
 import org.dom4j.DocumentHelper
 
 class DetektBaselineParser : BaselineParser {
+
+    override fun supportsFileBasedParsing(): Boolean = true
 
     override fun parseIssues(baselineFileInfo: BaselineFileInfo): Map<String, Int> {
         return try {
@@ -24,12 +27,11 @@ class DetektBaselineParser : BaselineParser {
 
             issueBreakdown
         } catch (e: Exception) {
-            println("Error parsing detekt baseline file ${baselineFileInfo.file.name}: ${e.message}")
-            emptyMap()
+            throw BaselineProcessingException.FileParsingFailed(baselineFileInfo.file.name, e)
         }
     }
 
-    fun parseIssuesWithFileNames(baselineFileInfo: BaselineFileInfo): Map<String, Map<String, Int>> {
+    override fun parseIssuesWithFileNames(baselineFileInfo: BaselineFileInfo): Map<String, Map<String, Int>> {
         return try {
             val xmlContent = baselineFileInfo.file.readText()
             val document = DocumentHelper.parseText(xmlContent)
@@ -50,8 +52,7 @@ class DetektBaselineParser : BaselineParser {
 
             fileIssueBreakdown
         } catch (e: Exception) {
-            println("Error parsing detekt baseline file ${baselineFileInfo.file.name}: ${e.message}")
-            emptyMap()
+            throw BaselineProcessingException.FileParsingFailed(baselineFileInfo.file.name, e)
         }
     }
 
