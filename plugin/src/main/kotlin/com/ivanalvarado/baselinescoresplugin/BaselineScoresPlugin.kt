@@ -24,7 +24,7 @@ class BaselineScoresPlugin : Plugin<Project> {
             it.group = "baseline"
             it.description = "Find all baseline files in the project and its modules"
             it.doLast {
-                val baselineFiles = detector.findAllBaselineFiles(project.rootProject, extension)
+                val baselineFiles = detector.findAllBaselineFiles(project, extension)
 
                 if (baselineFiles.isEmpty()) {
                     println("No baseline files found in the project.")
@@ -41,7 +41,7 @@ class BaselineScoresPlugin : Plugin<Project> {
             it.group = "baseline"
             it.description = "Generate baseline scores for the project"
             it.doLast {
-                val baselineFiles = detector.findAllBaselineFiles(project.rootProject, extension)
+                val baselineFiles = detector.findAllBaselineFiles(project, extension)
                 val scoringConfiguration = extension.getScoringConfiguration()
 
                 println("Generating baseline scores for ${baselineFiles.size} baseline file(s)...")
@@ -82,7 +82,7 @@ class BaselineScoresPlugin : Plugin<Project> {
         moduleScores: List<FileScoringResult>,
         totalProjectScore: Int
     ) {
-        val buildDir = File(project.rootProject.buildDir, "baseline-scores")
+        val buildDir = File(project.buildDir, "baseline-scores")
         buildDir.mkdirs()
 
         val outputFile = File(buildDir, "baseline-scores-results.json")
