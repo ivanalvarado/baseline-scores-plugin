@@ -26,7 +26,7 @@ class JsonReportGenerator : ReportGenerator {
             val outputFile = File(buildDir, "baseline-scores-results.json")
             val results = buildResultsStructure(moduleScores)
 
-            val finalOutput = buildFinalOutput(totalProjectScore, moduleScores, results)
+            val finalOutput = buildFinalOutput(project.path, totalProjectScore, moduleScores, results)
 
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, finalOutput)
 
@@ -63,12 +63,14 @@ class JsonReportGenerator : ReportGenerator {
     }
 
     private fun buildFinalOutput(
+        projectPath: String,
         totalProjectScore: Int,
         moduleScores: List<FileScoringResult>,
         results: List<Map<String, Any>>
     ): Map<String, Any> {
         return mapOf(
             "generatedAt" to LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            "projectPath" to projectPath,
             "projectTotalScore" to totalProjectScore,
             "totalIssues" to moduleScores.sumOf { it.totalIssues },
             "results" to results
