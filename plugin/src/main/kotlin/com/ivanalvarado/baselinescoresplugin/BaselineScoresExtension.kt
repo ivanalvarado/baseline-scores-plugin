@@ -83,6 +83,19 @@ open class BaselineScoresExtension {
     )
 
     /**
+     * https://detekt.dev/docs/rules/coroutines
+     */
+    private val coroutinesRuleSet = mapOf(
+        "GlobalCoroutineUsage" to -10,
+        "InjectDispatcher" to -5,
+        "RedundantSuspendModifier" to -5,
+        "SleepInsteadOfDelay" to -5,
+        "SuspendFunSwallowedCancellation" to -10,
+        "SuspendFunWithCoroutineScopeReceiver" to -10,
+        "SuspendFunWithFlowReturnType" to -10,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
@@ -107,6 +120,6 @@ open class BaselineScoresExtension {
             "UseDataClass" to -5,
             "ExceptionRaisedInUnexpectedLocation" to -25,
             "TooGenericExceptionCaught" to -10
-        ) + commentsRuleSet + complexityRuleSet
+        ) + commentsRuleSet + complexityRuleSet + coroutinesRuleSet
     }
 }
