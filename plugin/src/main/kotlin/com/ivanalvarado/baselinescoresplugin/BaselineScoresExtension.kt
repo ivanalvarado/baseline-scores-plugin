@@ -137,6 +137,89 @@ open class BaselineScoresExtension {
     )
 
     /**
+     * https://detekt.dev/docs/rules/formatting
+     */
+    private val formattingRuleSet = mapOf(
+        "AnnotationOnSeparateLine" to -5,
+        "AnnotationSpacing" to -5,
+        "ArgumentListWrapping" to -5,
+        "BlockCommentInitialStarAlignment" to -5,
+        "ChainWrapping" to -5,
+        "ClassName" to -5,
+        "CommentSpacing" to -5,
+        "CommentWrapping" to -5,
+        "ContextReceiverMapping" to -5,
+        "DiscouragedCommentLocation" to -5,
+        "EnumEntryNameCase" to -5,
+        "EnumWrapping" to -5,
+        "Filename" to -5,
+        "FinalNewline" to -5,
+        "FunKeywordSpacing" to -5,
+        "FunctionName" to -5,
+        "FunctionReturnTypeSpacing" to -5,
+        "FunctionSignature" to -5,
+        "FunctionStartOfBodySpacing" to -5,
+        "FunctionTypeReferenceSpacing" to -5,
+        "IfElseBracing" to -5,
+        "IfElseWrapping" to -5,
+        "ImportOrdering" to -5,
+        "Indentation" to -5,
+        "KdocWrapping" to -5,
+        "MaximumLineLength" to -5,
+        "ModifierListSpacing" to -5,
+        "ModifierOrdering" to -5,
+        "MultiLineIfElse" to -5,
+        "MultilineExpressionWrapping" to -5,
+        "NoBlankLineBeforeRbrace" to -5,
+        "NoBlankLineInList" to -5,
+        "NoBlankLinesInChainedMethodCalls" to -5,
+        "NoConsecutiveBlankLines" to -5,
+        "NoConsecutiveComments" to -5,
+        "NoEmptyClassBody" to -5,
+        "NoEmptyFirstLineInClassBody" to -5,
+        "NoEmptyFirstLineInMethodBlock" to -5,
+        "NoLineBreakAfterElse" to -5,
+        "NoLineBreakBeforeAssignment" to -5,
+        "NoMultipleSpaces" to -5,
+        "NoSemicolons" to -5,
+        "NoSingleLineBlockComment" to -5,
+        "NoTrailingSpaces" to -5,
+        "NoUnitReturn" to -5,
+        "NoUnusedImports" to -5,
+        "NoWildcardImports" to -5,
+        "NullableTypeSpacing" to -5,
+        "PackageName" to -5,
+        "ParameterListSpacing" to -5,
+        "ParameterListWrapping" to -5,
+        "ParameterWrapping" to -5,
+        "PropertyName" to -5,
+        "PropertyWrapping" to -5,
+        "SpacingAroundAngleBrackets" to -5,
+        "SpacingAroundColon" to -5,
+        "SpacingAroundComma" to -5,
+        "SpacingAroundCurly" to -5,
+        "SpacingAroundDot" to -5,
+        "SpacingAroundDoubleColon" to -5,
+        "SpacingAroundKeyword" to -5,
+        "SpacingAroundOperators" to -5,
+        "SpacingAroundParens" to -5,
+        "SpacingAroundRangeOperator" to -5,
+        "SpacingAroundUnaryOperator" to -5,
+        "SpacingBetweenDeclarationsWithAnnotations" to -5,
+        "SpacingBetweenDeclarationsWithComments" to -5,
+        "SpacingBetweenFunctionNameAndOpeningParenthesis" to -5,
+        "StringTemplate" to -5,
+        "StringTemplateIndent" to -5,
+        "TrailingCommaOnCallSite" to -5,
+        "TrailingCommaOnDeclarationSite" to -5,
+        "TryCatchFinallySpacing" to -5,
+        "TypeArgumentListSpacing" to -5,
+        "TypeParameterListSpacing" to -5,
+        "UnnecessaryParenthesesBeforeTrailingLambda" to -5,
+        "Wrapping" to -5,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
@@ -159,6 +242,12 @@ open class BaselineScoresExtension {
             "UnnecessaryLet" to -3,
             "DataClassContainsFunctions" to -8,
             "UseDataClass" to -5,
-        ) + commentsRuleSet + complexityRuleSet + coroutinesRuleSet + emptyBlocksRuleSet + exceptionsRuleSet
+        ) +
+                commentsRuleSet +
+                complexityRuleSet +
+                coroutinesRuleSet +
+                emptyBlocksRuleSet +
+                exceptionsRuleSet +
+                formattingRuleSet
     }
 }
