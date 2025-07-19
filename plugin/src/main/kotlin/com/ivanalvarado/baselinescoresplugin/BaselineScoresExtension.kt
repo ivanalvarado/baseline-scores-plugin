@@ -62,6 +62,27 @@ open class BaselineScoresExtension {
     )
 
     /**
+     * https://detekt.dev/docs/rules/complexity
+     */
+    private val complexityRuleSet = mapOf(
+        "CognitiveComplexMethod" to -20,
+        "ComplexCondition" to -20,
+        "ComplexInterface" to -20,
+        "CyclomaticComplexMethod" to -20,
+        "LabeledExpression" to -20,
+        "LargeClass" to -20,
+        "LongMethod" to -20,
+        "LongParameterList" to -20,
+        "MethodOverloading" to -20,
+        "NamedArguments" to -5,
+        "NestedBlockDepth" to -20,
+        "NestedScopeFunctions" to -5,
+        "ReplaceSafeCallChainWithRun" to -10,
+        "StringLiteralDuplication" to -5,
+        "TooManyFunctions" to -20,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
@@ -86,6 +107,6 @@ open class BaselineScoresExtension {
             "UseDataClass" to -5,
             "ExceptionRaisedInUnexpectedLocation" to -25,
             "TooGenericExceptionCaught" to -10
-        ) + commentsRuleSet
+        ) + commentsRuleSet + complexityRuleSet
     }
 }
