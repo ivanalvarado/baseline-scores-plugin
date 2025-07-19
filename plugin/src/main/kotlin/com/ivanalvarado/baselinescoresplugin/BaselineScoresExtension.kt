@@ -117,6 +117,26 @@ open class BaselineScoresExtension {
     )
 
     /**
+     * https://detekt.dev/docs/rules/exceptions
+     */
+    private val exceptionsRuleSet = mapOf(
+        "ExceptionRaisedInUnexpectedLocation" to -20,
+        "InstanceOfCheckForException" to -20,
+        "NotImplementedDeclaration" to -20,
+        "ObjectExtendsThrowable" to -10,
+        "PrintStackTrace" to -20,
+        "RethrowCaughtException" to -5,
+        "ReturnFromFinally" to -20,
+        "SwallowedException" to -20,
+        "ThrowingExceptionFromFinally" to -20,
+        "ThrowingExceptionInMain" to -20,
+        "ThrowingExceptionsWithoutMessageOrCause" to -5,
+        "ThrowingNewInstanceOfSameException" to -5,
+        "TooGenericExceptionCaught" to -20,
+        "TooGenericExceptionThrown" to -20,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
@@ -139,8 +159,6 @@ open class BaselineScoresExtension {
             "UnnecessaryLet" to -3,
             "DataClassContainsFunctions" to -8,
             "UseDataClass" to -5,
-            "ExceptionRaisedInUnexpectedLocation" to -25,
-            "TooGenericExceptionCaught" to -10
-        ) + commentsRuleSet + complexityRuleSet + coroutinesRuleSet + emptyBlocksRuleSet
+        ) + commentsRuleSet + complexityRuleSet + coroutinesRuleSet + emptyBlocksRuleSet + exceptionsRuleSet
     }
 }
