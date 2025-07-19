@@ -96,6 +96,27 @@ open class BaselineScoresExtension {
     )
 
     /**
+     * https://detekt.dev/docs/rules/empty-blocks
+     */
+    private val emptyBlocksRuleSet = mapOf(
+        "EmptyCatchBlock" to -5,
+        "EmptyClassBlock" to -5,
+        "EmptyDefaultConstructor" to -5,
+        "EmptyDoWhileBlock" to -5,
+        "EmptyElseBlock" to -5,
+        "EmptyFinallyBlock" to -5,
+        "EmptyForBlock" to -5,
+        "EmptyFunctionBlock" to -5,
+        "EmptyIfBlock" to -5,
+        "EmptyInitBlock" to -5,
+        "EmptyKtFile" to -5,
+        "EmptySecondaryConstructor" to -5,
+        "EmptyTryBlock" to -5,
+        "EmptyWhenBlock" to -5,
+        "EmptyWhileBlock" to -5,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
@@ -120,6 +141,6 @@ open class BaselineScoresExtension {
             "UseDataClass" to -5,
             "ExceptionRaisedInUnexpectedLocation" to -25,
             "TooGenericExceptionCaught" to -10
-        ) + commentsRuleSet + complexityRuleSet + coroutinesRuleSet
+        ) + commentsRuleSet + complexityRuleSet + coroutinesRuleSet + emptyBlocksRuleSet
     }
 }
