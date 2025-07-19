@@ -46,6 +46,22 @@ open class BaselineScoresExtension {
     }
 
     /**
+     * https://detekt.dev/docs/rules/comments
+     */
+    private val commentsRuleSet = mapOf(
+        "AbsentOrWrongFileLicense" to -5,
+        "CommentOverPrivateFunction" to -20,
+        "CommentOverPrivateProperty" to -20,
+        "DeprecatedBlockTag" to -5,
+        "EndOfSentenceFormat" to -5,
+        "KDocReferencesNonPublicProperty" to -5,
+        "OutdatedDocumentation" to -10,
+        "UndocumentedPublicClass" to -20,
+        "UndocumentedPublicFunction" to -20,
+        "UndocumentedPublicProperty" to -20,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
@@ -70,6 +86,6 @@ open class BaselineScoresExtension {
             "UseDataClass" to -5,
             "ExceptionRaisedInUnexpectedLocation" to -25,
             "TooGenericExceptionCaught" to -10
-        )
+        ) + commentsRuleSet
     }
 }
