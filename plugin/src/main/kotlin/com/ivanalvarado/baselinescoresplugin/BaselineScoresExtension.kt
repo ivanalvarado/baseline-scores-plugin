@@ -312,6 +312,14 @@ open class BaselineScoresExtension {
     )
 
     /**
+     * https://detekt.dev/docs/rules/ruleauthors
+     */
+    private val ruleauthorsRuleSet = mapOf(
+        "UseEntityAtName" to -5,
+        "ViolatesTypeResolutionRequirements" to -5,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
@@ -344,6 +352,7 @@ open class BaselineScoresExtension {
                 librariesRuleSet +
                 namingRuleSet +
                 performanceRuleSet +
-                potentialBugsRuleSet
+                potentialBugsRuleSet +
+                ruleauthorsRuleSet
     }
 }
