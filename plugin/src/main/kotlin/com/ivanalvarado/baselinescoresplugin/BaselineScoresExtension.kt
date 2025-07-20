@@ -220,6 +220,15 @@ open class BaselineScoresExtension {
     )
 
     /**
+     * https://detekt.dev/docs/rules/libraries
+     */
+    private val librariesRuleSet = mapOf(
+        "ForbiddenPublicDataClass" to -20,
+        "LibraryCodeMustSpecifyReturnType" to -5,
+        "LibraryEntitiesShouldNotBePublic" to -5,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
@@ -248,6 +257,7 @@ open class BaselineScoresExtension {
                 coroutinesRuleSet +
                 emptyBlocksRuleSet +
                 exceptionsRuleSet +
-                formattingRuleSet
+                formattingRuleSet +
+                librariesRuleSet
     }
 }
