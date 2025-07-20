@@ -256,6 +256,18 @@ open class BaselineScoresExtension {
     )
 
     /**
+     * https://detekt.dev/docs/rules/performance
+     */
+    private val performanceRuleSet = mapOf(
+        "ArrayPrimitive" to -5,
+        "CouldBeSequence" to -5,
+        "ForEachOnRange" to -5,
+        "SpreadOperator" to -20,
+        "UnnecessaryPartOfBinaryExpression" to -5,
+        "UnnecessaryTemporaryInstantiation" to -5,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
@@ -286,6 +298,7 @@ open class BaselineScoresExtension {
                 exceptionsRuleSet +
                 formattingRuleSet +
                 librariesRuleSet +
-                namingRuleSet
+                namingRuleSet +
+                performanceRuleSet
     }
 }
