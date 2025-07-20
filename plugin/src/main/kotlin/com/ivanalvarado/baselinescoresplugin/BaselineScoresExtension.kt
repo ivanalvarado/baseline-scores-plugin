@@ -228,6 +228,30 @@ open class BaselineScoresExtension {
         "LibraryEntitiesShouldNotBePublic" to -5,
     )
 
+    private val namingRuleSet = mapOf(
+        "BooleanPropertyNaming" to -5,
+        "ClassNaming" to -5,
+        "ConstructorParameterNaming" to -5,
+        "EnumNaming" to -5,
+        "ForbiddenClassName" to -5,
+        "FunctionMaxLength" to -5,
+        "FunctionMinLength" to -5,
+        "FunctionNaming" to -5,
+        "FunctionParameterNaming" to -5,
+        "InvalidPackageDeclaration" to -5,
+        "LambdaParameterNaming" to -5,
+        "MatchingDeclarationName" to -5,
+        "MemberNameEqualsClassName" to -5,
+        "NoNameShadowing" to -5,
+        "NonBooleanPropertyPrefixedWithIs" to -5,
+        "ObjectPropertyNaming" to -5,
+        "PackageNaming" to -5,
+        "TopLevelPropertyNaming" to -5,
+        "VariableMaxLength" to -5,
+        "VariableMinLength" to -5,
+        "VariableNaming" to -5,
+    )
+
     /**
      * Default scoring rules for common detekt issues
      */
@@ -258,6 +282,7 @@ open class BaselineScoresExtension {
                 emptyBlocksRuleSet +
                 exceptionsRuleSet +
                 formattingRuleSet +
-                librariesRuleSet
+                librariesRuleSet +
+                namingRuleSet
     }
 }
