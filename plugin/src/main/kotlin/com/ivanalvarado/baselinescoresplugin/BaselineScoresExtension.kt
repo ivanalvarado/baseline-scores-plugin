@@ -268,6 +268,50 @@ open class BaselineScoresExtension {
     )
 
     /**
+     * https://detekt.dev/docs/rules/potential-bugs
+     */
+    private val potentialBugsRuleSet = mapOf(
+        "AvoidReferentialEquality" to -5,
+        "CastNullableToNonNullableType" to -5,
+        "CastToNullableType" to -5,
+        "Deprecation" to -20,
+        "DontDowncastCollectionTypes" to -10,
+        "DoubleMutabilityForCollection" to -5,
+        "DuplicateCaseInWhenExpression" to -10,
+        "ElseCaseInsteadOfExhaustiveWhen" to -5,
+        "EqualsAlwaysReturnsTrueOrFalse" to -20,
+        "EqualsWithHashCodeExist" to -5,
+        "ExitOutsideMain" to -10,
+        "ExplicitGarbageCollectionCall" to -20,
+        "HasPlatformType" to -5,
+        "IgnoredReturnValue" to -20,
+        "ImplicitDefaultLocale" to -5,
+        "ImplicitUnitReturnType" to -5,
+        "InvalidRange" to -10,
+        "IteratorHasNextCallsNextMethod" to -10,
+        "IteratorNotThrowingNoSuchElementException" to -10,
+        "LateinitUsage" to -20,
+        "MapGetWithNotNullAssertionOperator" to -5,
+        "MissingPackageDeclaration" to -5,
+        "MissingWhenCase" to -20,
+        "NullCheckOnMutableProperty" to -10,
+        "NullableToStringCall" to -5,
+        "PropertyUsedBeforeDeclaration" to -5,
+        "RedundantElseInWhen" to -5,
+        "UnconditionalJumpStatementInLoop" to -10,
+        "UnnecessaryNotNullCheck" to -5,
+        "UnnecessaryNotNullOperator" to -5,
+        "UnnecessarySafeCall" to -5,
+        "UnreachableCatchBlock" to -5,
+        "UnreachableCode" to -10,
+        "UnsafeCallOnNullableType" to -20,
+        "UnsafeCast" to -20,
+        "UnusedUnaryOperator" to -5,
+        "UselessPostfixExpression" to -20,
+        "WrongEqualsTypeParameter" to -10,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
@@ -299,6 +343,7 @@ open class BaselineScoresExtension {
                 formattingRuleSet +
                 librariesRuleSet +
                 namingRuleSet +
-                performanceRuleSet
+                performanceRuleSet +
+                potentialBugsRuleSet
     }
 }
