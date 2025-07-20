@@ -228,6 +228,9 @@ open class BaselineScoresExtension {
         "LibraryEntitiesShouldNotBePublic" to -5,
     )
 
+    /**
+     * https://detekt.dev/docs/rules/naming
+     */
     private val namingRuleSet = mapOf(
         "BooleanPropertyNaming" to -5,
         "ClassNaming" to -5,
