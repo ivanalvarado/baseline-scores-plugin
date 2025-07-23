@@ -320,30 +320,104 @@ open class BaselineScoresExtension {
     )
 
     /**
+     * https://detekt.dev/docs/rules/style
+     */
+    private val styleRuleSet = mapOf(
+        "AlsoCouldBeApply" to -5,
+        "BracesOnIfStatements" to -5,
+        "BracesOnWhenStatements" to -5,
+        "CanBeNonNullable" to -10,
+        "CascadingCallWrapping" to -5,
+        "ClassOrdering" to -5,
+        "CollapsibleIfStatements" to -5,
+        "DataClassContainsFunctions" to -20,
+        "DataClassShouldBeImmutable" to -20,
+        "DestructuringDeclarationWithTooManyEntries" to -10,
+        "DoubleNegativeLambda" to -5,
+        "EqualsNullCall" to -5,
+        "EqualsOnSignatureLine" to -5,
+        "ExplicitCollectionElementAccessMethod" to -5,
+        "ExplicitItLambdaParameter" to -5,
+        "ExpressionBodySyntax" to -5,
+        "ForbiddenAnnotation" to -5,
+        "ForbiddenComment" to -10,
+        "ForbiddenImport" to -10,
+        "ForbiddenMethodCall" to -10,
+        "ForbiddenSuppress" to -10,
+        "ForbiddenVoid" to -5,
+        "FunctionOnlyReturningConstant" to -10,
+        "LoopWithTooManyJumpStatements" to -10,
+        "MagicNumber" to -10,
+        "MandatoryBracesLoops" to -5,
+        "MaxChainedCallsOnSameLine" to -5,
+        "MaxLineLength" to -5,
+        "MayBeConst" to -5,
+        "ModifierOrder" to -5,
+        "MultilineLambdaItParameter" to -5,
+        "MultilineRawStringIndentation" to -5,
+        "NestedClassesVisibility" to -5,
+        "NewLineAtEndOfFile" to -5,
+        "NoTabs" to -5,
+        "NullableBooleanCheck" to -5,
+        "ObjectLiteralToLambda" to -5,
+        "OptionalAbstractKeyword" to -5,
+        "OptionalUnit" to -5,
+        "OptionalWhenBraces" to -5,
+        "PreferToOverPairSyntax" to -5,
+        "ProtectedMemberInFinalClass" to -5,
+        "RedundantExplicitType" to -5,
+        "RedundantHigherOrderMapUsage" to -5,
+        "RedundantVisibilityModifierRule" to -5,
+        "ReturnCount" to -10,
+        "SafeCast" to -5,
+        "SerialVersionUIDInSerializableClass" to -5,
+        "SpacingBetweenPackageAndImports" to -5,
+        "StringShouldBeRawString" to -5,
+        "ThrowsCount" to -10,
+        "TrailingWhitespace" to -5,
+        "TrimMultilineRawString" to -5,
+        "UnderscoresInNumericLiterals" to -5,
+        "UnnecessaryAbstractClass" to -5,
+        "UnnecessaryAnnotationUseSiteTarget" to -5,
+        "UnnecessaryApply" to -5,
+        "UnnecessaryBackticks" to -5,
+        "UnnecessaryBracesAroundTrailingLambda" to -5,
+        "UnnecessaryFilter" to -5,
+        "UnnecessaryInheritance" to -5,
+        "UnnecessaryInnerClass" to -5,
+        "UnnecessaryLet" to -5,
+        "UnnecessaryParentheses" to -5,
+        "UntilInsteadOfRangeTo" to -5,
+        "UnusedImports" to -5,
+        "UnusedParameter" to -5,
+        "UnusedPrivateClass" to -5,
+        "UnusedPrivateMember" to -5,
+        "UnusedPrivateProperty" to -5,
+        "UseAnyOrNoneInsteadOfFind" to -5,
+        "UseArrayLiteralsInAnnotations" to -5,
+        "UseCheckNotNull" to -5,
+        "UseCheckOrError" to -5,
+        "UseDataClass" to -5,
+        "UseEmptyCounterpart" to -5,
+        "UseIfEmptyOrIfBlank" to -5,
+        "UseIfInsteadOfWhen" to -5,
+        "UseIsNullOrEmpty" to -5,
+        "UseLet" to -5,
+        "UseOrEmpty" to -5,
+        "UseRequire" to -5,
+        "UseRequireNotNull" to -5,
+        "UseSumOfInsteadOfFlatMapSize" to -5,
+        "UselessCallOnNotNull" to -5,
+        "UtilityClassWithPublicConstructor" to -5,
+        "VarCouldBeVal" to -5,
+        "WildcardImport" to -5,
+    )
+
+    /**
      * Default scoring rules for common detekt issues
      */
     private fun getDefaultScoringRules(): Map<String, Int> {
-        return mapOf(
-            "FunctionNaming" to -5,
-            "LongParameterList" to -10,
-            "MagicNumber" to -3,
-            "MatchingDeclarationName" to -5,
-            "UnusedPrivateMember" to -7,
-            "ComplexMethod" to -15,
-            "LongMethod" to -10,
-            "TooManyFunctions" to -12,
-            "LargeClass" to -15,
-            "EmptyFunctionBlock" to -5,
-            "UnnecessaryApply" to -3,
-            "UnsafeCallOnNullableType" to -20,
-            "LateinitUsage" to -8,
-            "ForEachOnRange" to -5,
-            "SpreadOperator" to -5,
-            "UnnecessaryLet" to -3,
-            "DataClassContainsFunctions" to -8,
-            "UseDataClass" to -5,
-        ) +
-                commentsRuleSet +
+        return commentsRuleSet +
                 complexityRuleSet +
                 coroutinesRuleSet +
                 emptyBlocksRuleSet +
@@ -353,6 +427,7 @@ open class BaselineScoresExtension {
                 namingRuleSet +
                 performanceRuleSet +
                 potentialBugsRuleSet +
-                ruleauthorsRuleSet
+                ruleauthorsRuleSet +
+                styleRuleSet
     }
 }
