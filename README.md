@@ -126,58 +126,70 @@ For a baseline file containing:
 ```xml
 <?xml version="1.0" ?>
 <SmellBaseline>
+  <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>FunctionNaming:BookmarksScreen.kt$@Composable internal fun BookmarksRoute(...)</ID>
-    <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun BookmarksGrid(...)</ID>
-    <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun EmptyState(...)</ID>
-    <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun LoadingState(...)</ID>
-    <ID>FunctionNaming:BookmarksScreen.kt$@Preview @Composable private fun BookmarksGridPreview(...)</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Composable internal fun BookmarksRoute( onTopicClick: (String) -&gt; Unit, onShowSnackbar: suspend (String, String?) -&gt; Boolean, modifier: Modifier = Modifier, viewModel: BookmarksViewModel = hiltViewModel(), )</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun BookmarksGrid( feedState: NewsFeedUiState, removeFromBookmarks: (String) -&gt; Unit, onNewsResourceViewed: (String) -&gt; Unit, onTopicClick: (String) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun EmptyState(modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Composable private fun LoadingState(modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@Preview @Composable private fun BookmarksGridPreview( @PreviewParameter(UserNewsResourcePreviewParameterProvider::class) userNewsResources: List&lt;UserNewsResource&gt;, )</ID>
     <ID>FunctionNaming:BookmarksScreen.kt$@Preview @Composable private fun EmptyStatePreview()</ID>
     <ID>FunctionNaming:BookmarksScreen.kt$@Preview @Composable private fun LoadingStatePreview()</ID>
-    <ID>FunctionNaming:BookmarksScreen.kt$@VisibleForTesting @Composable internal fun BookmarksScreen(...)</ID>
-    <ID>LongParameterList:BookmarksScreen.kt$( feedState: NewsFeedUiState, ... )</ID>
+    <ID>FunctionNaming:BookmarksScreen.kt$@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) @Composable internal fun BookmarksScreen( feedState: NewsFeedUiState, onShowSnackbar: suspend (String, String?) -&gt; Boolean, removeFromBookmarks: (String) -&gt; Unit, onNewsResourceViewed: (String) -&gt; Unit, onTopicClick: (String) -&gt; Unit, modifier: Modifier = Modifier, shouldDisplayUndoBookmark: Boolean = false, undoBookmarkRemoval: () -&gt; Unit = {}, clearUndoState: () -&gt; Unit = {}, )</ID>
+    <ID>LongParameterList:BookmarksScreen.kt$( feedState: NewsFeedUiState, onShowSnackbar: suspend (String, String?) -&gt; Boolean, removeFromBookmarks: (String) -&gt; Unit, onNewsResourceViewed: (String) -&gt; Unit, onTopicClick: (String) -&gt; Unit, modifier: Modifier = Modifier, shouldDisplayUndoBookmark: Boolean = false, undoBookmarkRemoval: () -&gt; Unit = {}, clearUndoState: () -&gt; Unit = {}, )</ID>
     <ID>MagicNumber:BookmarksViewModel.kt$BookmarksViewModel$5_000</ID>
+    <ID>MatchingDeclarationName:BookmarksNavigation.kt$BookmarksRoute</ID>
+    <ID>UnusedPrivateMember:BookmarksScreen.kt$@Preview @Composable private fun BookmarksGridPreview( @PreviewParameter(UserNewsResourcePreviewParameterProvider::class) userNewsResources: List&lt;UserNewsResource&gt;, )</ID>
+    <ID>UnusedPrivateMember:BookmarksScreen.kt$@Preview @Composable private fun EmptyStatePreview()</ID>
+    <ID>UnusedPrivateMember:BookmarksScreen.kt$@Preview @Composable private fun LoadingStatePreview()</ID>
   </CurrentIssues>
 </SmellBaseline>
+
 ```
 
 The plugin generates:
 
 ```json
 {
-  "generatedAt": "2025-01-07T15:30:45.123456",
-  "projectTotalScore": -79,
-  "totalIssues": 10,
-  "results": [
-    {
-      "class": "BookmarksScreen.kt",
-      "issues": [
-        {
-          "issue": "FunctionNaming",
-          "occurrences": 8,
-          "debt": -5,
-          "score": -40
-        },
-        {
-          "issue": "LongParameterList",
-          "occurrences": 1,
-          "debt": -10,
-          "score": -10
-        }
-      ]
-    },
-    {
-      "class": "BookmarksViewModel.kt",
-      "issues": [
-        {
-          "issue": "MagicNumber",
-          "occurrences": 1,
-          "debt": -3,
-          "score": -3
-        }
-      ]
-    }
-  ]
+  "generatedAt" : "2025-07-22T21:36:37.802924",
+  "projectPath" : ":feature:bookmarks",
+  "projectTotalScore" : -130,
+  "totalIssues" : 14,
+  "results" : [ {
+    "class" : "BookmarksScreen.kt",
+    "issues" : [ {
+      "issue" : "FunctionNaming",
+      "occurrences" : 8,
+      "debt" : -10,
+      "score" : -80
+    }, {
+      "issue" : "LongParameterList",
+      "occurrences" : 1,
+      "debt" : -20,
+      "score" : -20
+    }, {
+      "issue" : "UnusedPrivateMember",
+      "occurrences" : 3,
+      "debt" : -5,
+      "score" : -15
+    } ]
+  }, {
+    "class" : "BookmarksViewModel.kt",
+    "issues" : [ {
+      "issue" : "MagicNumber",
+      "occurrences" : 1,
+      "debt" : -10,
+      "score" : -10
+    } ]
+  }, {
+    "class" : "BookmarksNavigation.kt",
+    "issues" : [ {
+      "issue" : "MatchingDeclarationName",
+      "occurrences" : 1,
+      "debt" : -5,
+      "score" : -5
+    } ]
+  } ]
 }
 ```
 
