@@ -71,8 +71,8 @@ class BaselineScoresExtensionTest {
 
         // Should have default rules
         assertEquals(-5, config.getPointsForIssue("FunctionNaming"))
-        assertEquals(-10, config.getPointsForIssue("LongParameterList"))
-        assertEquals(-3, config.getPointsForIssue("MagicNumber"))
+        assertEquals(-20, config.getPointsForIssue("LongParameterList"))
+        assertEquals(-10, config.getPointsForIssue("MagicNumber"))
 
         // Should have custom rule
         assertEquals(-50, config.getPointsForIssue("CustomIssue"))
@@ -97,16 +97,16 @@ class BaselineScoresExtensionTest {
 
         // Test some key default rules
         assertEquals(-5, config.getPointsForIssue("FunctionNaming"))
-        assertEquals(-10, config.getPointsForIssue("LongParameterList"))
-        assertEquals(-3, config.getPointsForIssue("MagicNumber"))
-        assertEquals(-7, config.getPointsForIssue("UnusedPrivateMember"))
-        assertEquals(-15, config.getPointsForIssue("ComplexMethod"))
+        assertEquals(-20, config.getPointsForIssue("LongParameterList"))
+        assertEquals(-10, config.getPointsForIssue("MagicNumber"))
+        assertEquals(-5, config.getPointsForIssue("UnusedPrivateMember"))
+        assertEquals(-5, config.getPointsForIssue("ComplexMethod"))
         assertEquals(-20, config.getPointsForIssue("UnsafeCallOnNullableType"))
-        assertEquals(-25, config.getPointsForIssue("ExceptionRaisedInUnexpectedLocation"))
+        assertEquals(-20, config.getPointsForIssue("ExceptionRaisedInUnexpectedLocation"))
 
         // Verify these are more severe than the default
-        assertTrue(config.getPointsForIssue("ComplexMethod") < extension.defaultIssuePoints)
         assertTrue(config.getPointsForIssue("UnsafeCallOnNullableType") < extension.defaultIssuePoints)
+        assertTrue(config.getPointsForIssue("ExceptionRaisedInUnexpectedLocation") < extension.defaultIssuePoints)
     }
 
     @Test
