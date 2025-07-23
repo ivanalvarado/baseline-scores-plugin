@@ -83,36 +83,41 @@ For specific modules:
 **Console Output:**
 
 ```
-Generating baseline scores for 2 baseline file(s)...
+> Task :feature:bookmarks:generateBaselineScores
+Generating baseline scores for 1 baseline file(s)...
 Default issue points: -5
 
-[DETEKT] Module: app
-  Total issues: 15, Total score: -89
-  Issue breakdown:
-    FunctionNaming: 8 issues × -5 points = -40
-    LongParameterList: 2 issues × -10 points = -20
-    MagicNumber: 3 issues × -3 points = -9
-    UnusedPrivateMember: 2 issues × -7 points = -14
+[DETEKT] Module: bookmarks
+  Total issues: 14, Total score: -130
+  File breakdown:
+    BookmarksScreen.kt:
+      FunctionNaming: 8 issues × -10 points = -80
+      UnusedPrivateMember: 3 issues × -5 points = -15
+      LongParameterList: 1 issues × -20 points = -20
+    BookmarksViewModel.kt:
+      MagicNumber: 1 issues × -10 points = -10
+    BookmarksNavigation.kt:
+      MatchingDeclarationName: 1 issues × -5 points = -5
 
 ==================================================
 PROJECT SUMMARY
 ==================================================
-Total project score: -124
-Total modules analyzed: 2
-Total issues: 20
+Total project score: -130
+Total modules analyzed: 1
+Total issues: 14
 
 Most common issues:
   FunctionNaming: 8 occurrences
-  MagicNumber: 3 occurrences
-  LongParameterList: 2 occurrences
-
-JSON results written to: /path/to/project/build/baseline-scores/baseline-scores-results.json
+  UnusedPrivateMember: 3 occurrences
+  LongParameterList: 1 occurrences
+  MagicNumber: 1 occurrences
+  MatchingDeclarationName: 1 occurrences
+Output file: /Users/ivanalvarado/Developer/nowinandroid/feature/bookmarks/build/baseline-scores/baseline-scores-results.json
 ```
 
 **JSON Output Location:**
 
-- When run from root: `build/baseline-scores/baseline-scores-results.json`
-- When run from submodule: `{module}/build/baseline-scores/baseline-scores-results.json`
+- `{module}/build/baseline-scores/baseline-scores-results.json`
 
 **Example JSON Output:**
 
@@ -201,8 +206,8 @@ Validates current scores against baseline thresholds.
 
 The plugin now operates on the project where the task is executed:
 
-- **Root project execution**: `./gradlew generateBaselineScores` processes baseline files in the
-  root project and all its subprojects
+- **Root project execution**: `./gradlew generateBaselineScores` processes baseline files in the 
+  all its subprojects
 - **Submodule execution**: `./gradlew :feature:bookmarks:generateBaselineScores` processes only
   baseline files in the `feature:bookmarks` module and its subprojects
 - **Output location**: JSON results are always written to the `build` directory of the project where
