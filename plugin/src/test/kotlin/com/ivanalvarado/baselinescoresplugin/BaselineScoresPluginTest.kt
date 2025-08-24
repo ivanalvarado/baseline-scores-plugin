@@ -21,8 +21,8 @@ class BaselineScoresPluginTest {
 
         val extension = project.extensions.findByType(BaselineScoresExtension::class.java)
         assertNotNull(extension)
-        assertEquals("baseline-scores.json", extension?.outputFile)
-        assertEquals(0.8, extension?.threshold ?: 0.0, 0.001)
+        assertEquals("baseline-scores.json", extension?.outputFile?.get())
+        assertEquals(0.8, extension?.minimumScoreThreshold?.get() ?: 0.0, 0.001)
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.ivanalvarado.baselinescoresplugin.integration
 
 import com.ivanalvarado.baselinescoresplugin.BaselineScoresExtension
+import org.gradle.testfixtures.ProjectBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -9,14 +10,19 @@ import kotlin.test.assertEquals
  */
 class PluginConfigurationExampleTest {
 
+    private fun createExtension(): BaselineScoresExtension {
+        val project = ProjectBuilder.builder().build()
+        return project.objects.newInstance(BaselineScoresExtension::class.java)
+    }
+
     @Test
     fun `should demonstrate basic plugin configuration`() {
-        val extension = BaselineScoresExtension()
+        val extension = createExtension()
 
         // Basic configuration
         extension.apply {
-            outputFile = "my-baseline-scores.json"
-            defaultIssuePoints = -8
+            outputFile.set("my-baseline-scores.json")
+            defaultIssuePoints.set(-8)
 
             // Configure specific issue scores
             issueScore("ComplexMethod", -20)
@@ -35,8 +41,8 @@ class PluginConfigurationExampleTest {
         val config = extension.getScoringConfiguration()
 
         // Verify configuration
-        assertEquals("my-baseline-scores.json", extension.outputFile)
-        assertEquals(-8, extension.defaultIssuePoints)
+        assertEquals("my-baseline-scores.json", extension.outputFile.get())
+        assertEquals(-8, extension.defaultIssuePoints.get())
         assertEquals(-20, config.getPointsForIssue("ComplexMethod"))
         assertEquals(-15, config.getPointsForIssue("LongMethod"))
         assertEquals(-2, config.getPointsForIssue("MagicNumber"))
@@ -47,11 +53,11 @@ class PluginConfigurationExampleTest {
 
     @Test
     fun `should demonstrate severity-based scoring configuration`() {
-        val extension = BaselineScoresExtension()
+        val extension = createExtension()
 
         // Configure based on severity levels
         extension.apply {
-            defaultIssuePoints = -5
+            defaultIssuePoints.set(-5)
 
             // Critical issues (security, bugs)
             issueScores(
@@ -103,11 +109,11 @@ class PluginConfigurationExampleTest {
 
     @Test
     fun `should demonstrate gradual improvement strategy`() {
-        val extension = BaselineScoresExtension()
+        val extension = createExtension()
 
         // Strategy: Start with low penalties and gradually increase
         extension.apply {
-            defaultIssuePoints = -1  // Very mild penalty for new issues
+            defaultIssuePoints.set(-1)  // Very mild penalty for new issues
 
             // Phase 1: Focus on critical issues only
             issueScores(

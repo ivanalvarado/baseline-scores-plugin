@@ -35,7 +35,7 @@ class GenerateBaselineScoresUseCase(
         extension: BaselineScoresExtension
     ) {
         println("Generating baseline scores for ${baselineFiles.size} baseline file(s)...")
-        println("Default issue points: ${extension.defaultIssuePoints}")
+        println("Default issue points: ${extension.defaultIssuePoints.get()}")
     }
 
     private fun generateModuleScores(

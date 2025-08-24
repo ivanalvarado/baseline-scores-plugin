@@ -2,9 +2,20 @@ package com.ivanalvarado.baselinescoresplugin
 
 import com.ivanalvarado.baselinescoresplugin.config.DetektDefaultScores
 import com.ivanalvarado.baselinescoresplugin.domain.ScoringConfiguration
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
+import javax.inject.Inject
 
 /**
  * DSL for configuring baseline scores calculation.
+ *
+ * This extension uses Gradle's Provider API for:
+ * - Lazy evaluation of configuration values
+ * - Better configuration caching support
+ * - Improved build performance
+ * - Type-safe property declarations
  *
  * This extension provides configuration options for:
  * - Which static analysis tools to include.
@@ -12,64 +23,62 @@ import com.ivanalvarado.baselinescoresplugin.domain.ScoringConfiguration
  * - How to override scores for specific rules.
  * - File patterns and score thresholds.
  */
-open class BaselineScoresExtension {
+abstract class BaselineScoresExtension @Inject constructor(private val objects: ObjectFactory) {
+
     /** The output file for the baseline scores report. */
-    var outputFile: String = "baseline-scores.json"
+    abstract val outputFile: Property<String>
 
     /**
      * The minimum score threshold (from 0.0 to 1.0) that the project must meet.
      * If the calculated score falls below this value, the build will fail.
      */
-    var minimumScoreThreshold: Double = 0.8
-        set(value) {
-            require(value in 0.0..1.0) { "minimumScoreThreshold must be between 0.0 and 1.0, but was $value" }
-            field = value
-        }
+    abstract val minimumScoreThreshold: Property<Double>
 
     /**
      * @deprecated Use `minimumScoreThreshold` instead.
      */
     @Deprecated("Use minimumScoreThreshold", ReplaceWith("minimumScoreThreshold"))
     var threshold: Double
-        get() = minimumScoreThreshold
+        get() = minimumScoreThreshold.get()
         set(value) {
-            minimumScoreThreshold = value
+            require(value in 0.0..1.0) { "threshold must be between 0.0 and 1.0, but was $value" }
+            minimumScoreThreshold.set(value)
         }
 
     /** Master switch to enable or disable all plugin tasks. */
-    var enabled: Boolean = true
+    abstract val enabled: Property<Boolean>
 
     /** Glob patterns for files to include in analysis. */
-    var includePatterns: List<String> = listOf("**/*.kt", "**/*.java")
+    abstract val includePatterns: ListProperty<String>
 
     /** Glob patterns for files to exclude from analysis. */
-    var excludePatterns: List<String> = listOf("**/test/**", "**/build/**")
+    abstract val excludePatterns: ListProperty<String>
 
     // --- Tool-specific Toggles ---
 
     /** Enables or disables Detekt analysis. */
-    var detektEnabled: Boolean = true
+    abstract val detektEnabled: Property<Boolean>
 
     /**
      * Whether to use default scoring for Detekt issues.
      * Set to false to provide all scoring rules yourself.
      */
-    var useDefaultDetektScoring: Boolean = true
+    abstract val useDefaultDetektScoring: Property<Boolean>
 
     /** The Detekt baseline file to read from. */
-    var detektBaselineFileName: String = "detekt-baseline.xml"
+    abstract val detektBaselineFileName: Property<String>
 
     /** Enables or disables Android Lint analysis. */
-    var lintEnabled: Boolean = true
+    abstract val lintEnabled: Property<Boolean>
 
     /**
      * Whether to use default scoring for Lint issues.
      * Set to false to provide all scoring rules yourself.
      */
-    var useDefaultLintScoring: Boolean = false // Defaults for lint not implemented yet
+    abstract val useDefaultLintScoring: Property<Boolean>
 
     /** The Lint baseline file to read from. */
-    var lintBaselineFileName: String = "lint-baseline.xml"
+    abstract val lintBaselineFileName: Property<String>
 
     // --- Scoring Configuration ---
 
@@ -77,12 +86,28 @@ open class BaselineScoresExtension {
      * The default point value for any issue that does not have a specific score defined.
      * Used as a fallback.
      */
-    var defaultIssuePoints: Int = -5
+    abstract val defaultIssuePoints: Property<Int>
 
     /**
      * A map holding all user-defined scoring rules, which override default scores.
      */
-    private val userScoringRules = mutableMapOf<String, Int>()
+    abstract val userScoringRules: MapProperty<String, Int>
+
+    init {
+        // Set default values
+        outputFile.convention("baseline-scores.json")
+        minimumScoreThreshold.convention(0.8)
+        enabled.convention(true)
+        includePatterns.convention(listOf("**/*.kt", "**/*.java"))
+        excludePatterns.convention(listOf("**/test/**", "**/build/**"))
+        detektEnabled.convention(true)
+        useDefaultDetektScoring.convention(true)
+        detektBaselineFileName.convention("detekt-baseline.xml")
+        lintEnabled.convention(true)
+        useDefaultLintScoring.convention(false) // Defaults for lint not implemented yet
+        lintBaselineFileName.convention("lint-baseline.xml")
+        defaultIssuePoints.convention(-5)
+    }
 
     /**
      * Assign a point value to a specific static analysis issue by its type.
@@ -92,7 +117,7 @@ open class BaselineScoresExtension {
      *     issueScore("MagicNumber", -15)
      */
     fun issueScore(issueType: String, points: Int) {
-        userScoringRules[issueType] = points
+        userScoringRules.put(issueType, points)
     }
 
     /**
@@ -117,19 +142,19 @@ open class BaselineScoresExtension {
     fun getScoringConfiguration(): ScoringConfiguration {
         val mergedRules = mutableMapOf<String, Int>()
 
-        if (detektEnabled && useDefaultDetektScoring) {
+        if (detektEnabled.get() && useDefaultDetektScoring.get()) {
             mergedRules.putAll(DetektDefaultScores.rules)
         }
 
-        if (lintEnabled && useDefaultLintScoring) {
+        if (lintEnabled.get() && useDefaultLintScoring.get()) {
             // Future: mergedRules.putAll(LintDefaultScores.rules)
         }
 
-        mergedRules.putAll(userScoringRules)
+        mergedRules.putAll(userScoringRules.get())
 
         return ScoringConfiguration(
             rules = mergedRules,
-            defaultPoints = defaultIssuePoints
+            defaultPoints = defaultIssuePoints.get()
         )
     }
 }

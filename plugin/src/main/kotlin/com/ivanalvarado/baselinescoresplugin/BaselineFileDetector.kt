@@ -26,14 +26,14 @@ class BaselineFileDetector {
         val allProjects = listOf(rootProject) + rootProject.subprojects.toList()
 
         for (project in allProjects) {
-            if (extension.detektEnabled) {
-                findDetektBaseline(project, extension.detektBaselineFileName)?.let { file ->
+            if (extension.detektEnabled.get()) {
+                findDetektBaseline(project, extension.detektBaselineFileName.get())?.let { file ->
                     baselineFiles.add(BaselineFileInfo(file, BaselineType.DETEKT, project.name))
                 }
             }
 
-            if (extension.lintEnabled) {
-                findLintBaseline(project, extension.lintBaselineFileName)?.let { file ->
+            if (extension.lintEnabled.get()) {
+                findLintBaseline(project, extension.lintBaselineFileName.get())?.let { file ->
                     baselineFiles.add(BaselineFileInfo(file, BaselineType.LINT, project.name))
                 }
             }
