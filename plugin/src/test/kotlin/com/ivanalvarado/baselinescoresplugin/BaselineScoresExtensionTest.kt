@@ -1,26 +1,32 @@
 package com.ivanalvarado.baselinescoresplugin
 
+import org.gradle.testfixtures.ProjectBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class BaselineScoresExtensionTest {
 
+    private fun createExtension(): BaselineScoresExtension {
+        val project = ProjectBuilder.builder().build()
+        return project.objects.newInstance(BaselineScoresExtension::class.java)
+    }
+
     @Test
     fun `should have default configuration`() {
-        val extension = BaselineScoresExtension()
+        val extension = createExtension()
 
-        assertEquals("baseline-scores.json", extension.outputFile)
-        assertEquals(0.8, extension.threshold)
-        assertEquals(true, extension.enabled)
-        assertEquals(true, extension.detektEnabled)
-        assertEquals(true, extension.lintEnabled)
-        assertEquals(-5, extension.defaultIssuePoints)
+        assertEquals("baseline-scores.json", extension.outputFile.get())
+        assertEquals(0.8, extension.minimumScoreThreshold.get())
+        assertEquals(true, extension.enabled.get())
+        assertEquals(true, extension.detektEnabled.get())
+        assertEquals(true, extension.lintEnabled.get())
+        assertEquals(-5, extension.defaultIssuePoints.get())
     }
 
     @Test
     fun `should configure single issue score`() {
-        val extension = BaselineScoresExtension()
+        val extension = createExtension()
         extension.issueScore("FunctionNaming", -10)
 
         val config = extension.getScoringConfiguration()
@@ -31,7 +37,7 @@ class BaselineScoresExtensionTest {
 
     @Test
     fun `should configure multiple issue scores`() {
-        val extension = BaselineScoresExtension()
+        val extension = createExtension()
         extension.issueScores(
             mapOf(
                 "FunctionNaming" to -8,
@@ -50,7 +56,7 @@ class BaselineScoresExtensionTest {
 
     @Test
     fun `should override default scoring rules`() {
-        val extension = BaselineScoresExtension()
+        val extension = createExtension()
 
         // First check default value
         val defaultConfig = extension.getScoringConfiguration()
@@ -64,7 +70,7 @@ class BaselineScoresExtensionTest {
 
     @Test
     fun `should combine default rules with custom rules`() {
-        val extension = BaselineScoresExtension()
+        val extension = createExtension()
         extension.issueScore("CustomIssue", -50)
 
         val config = extension.getScoringConfiguration()
@@ -80,8 +86,8 @@ class BaselineScoresExtensionTest {
 
     @Test
     fun `should handle custom default points`() {
-        val extension = BaselineScoresExtension()
-        extension.defaultIssuePoints = -12
+        val extension = createExtension()
+        extension.defaultIssuePoints.set(-12)
 
         val config = extension.getScoringConfiguration()
 
@@ -92,7 +98,7 @@ class BaselineScoresExtensionTest {
 
     @Test
     fun `should have comprehensive default rules for common detekt issues`() {
-        val extension = BaselineScoresExtension()
+        val extension = createExtension()
         val config = extension.getScoringConfiguration()
 
         // Test some key default rules
@@ -105,15 +111,15 @@ class BaselineScoresExtensionTest {
         assertEquals(-20, config.getPointsForIssue("ExceptionRaisedInUnexpectedLocation"))
 
         // Verify these are more severe than the default
-        assertTrue(config.getPointsForIssue("UnsafeCallOnNullableType") < extension.defaultIssuePoints)
-        assertTrue(config.getPointsForIssue("ExceptionRaisedInUnexpectedLocation") < extension.defaultIssuePoints)
+        assertTrue(config.getPointsForIssue("UnsafeCallOnNullableType") < extension.defaultIssuePoints.get())
+        assertTrue(config.getPointsForIssue("ExceptionRaisedInUnexpectedLocation") < extension.defaultIssuePoints.get())
     }
 
     @Test
     fun `should allow chaining configuration methods`() {
-        val extension = BaselineScoresExtension()
+        val extension = createExtension()
         extension.apply {
-            defaultIssuePoints = -8
+            defaultIssuePoints.set(-8)
             issueScore("CustomIssue1", -10)
             issueScores(
                 mapOf(

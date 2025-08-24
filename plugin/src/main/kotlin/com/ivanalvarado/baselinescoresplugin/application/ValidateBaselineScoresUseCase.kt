@@ -24,12 +24,12 @@ class ValidateBaselineScoresUseCase(
         val scoringConfiguration = extension.getScoringConfiguration()
 
         println("Validating baseline scores...")
-        println("Threshold: ${extension.threshold}")
+        println("Threshold: ${extension.minimumScoreThreshold.get()}")
 
         if (baselineFiles.isEmpty()) {
             val message = "No baseline files found - validation passed by default"
             println(message)
-            return ValidationResult(true, 0, extension.threshold, message)
+            return ValidationResult(true, 0, extension.minimumScoreThreshold.get(), message)
         }
 
         val moduleScores = baselineFiles.map { info ->
@@ -39,12 +39,12 @@ class ValidateBaselineScoresUseCase(
         val totalScore = moduleScores.sumOf { it.totalScore }
         val normalizedScore =
             calculateNormalizedScore(totalScore, moduleScores.sumOf { it.totalIssues })
-        val isValid = normalizedScore >= extension.threshold
+        val isValid = normalizedScore >= extension.minimumScoreThreshold.get()
 
         val message = if (isValid) {
-            "Validation PASSED: Score $normalizedScore meets threshold ${extension.threshold}"
+            "Validation PASSED: Score $normalizedScore meets threshold ${extension.minimumScoreThreshold.get()}"
         } else {
-            "Validation FAILED: Score $normalizedScore below threshold ${extension.threshold}"
+            "Validation FAILED: Score $normalizedScore below threshold ${extension.minimumScoreThreshold.get()}"
         }
 
         println("\nValidation Results:")
@@ -53,7 +53,7 @@ class ValidateBaselineScoresUseCase(
         println("Normalized score: $normalizedScore")
         println(message)
 
-        return ValidationResult(isValid, totalScore, extension.threshold, message)
+        return ValidationResult(isValid, totalScore, extension.minimumScoreThreshold.get(), message)
     }
 
     private fun calculateNormalizedScore(totalScore: Int, totalIssues: Int): Double {

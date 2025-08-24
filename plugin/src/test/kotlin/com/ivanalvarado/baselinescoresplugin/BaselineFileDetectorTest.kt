@@ -14,7 +14,8 @@ class BaselineFileDetectorTest {
     @Before
     fun setup() {
         detector = BaselineFileDetector()
-        extension = BaselineScoresExtension()
+        val project = ProjectBuilder.builder().build()
+        extension = project.objects.newInstance(BaselineScoresExtension::class.java)
     }
 
     @Test
@@ -35,7 +36,7 @@ class BaselineFileDetectorTest {
         detektBaseline.writeText("<baseline></baseline>")
 
         // Disable lint to test only detekt
-        extension.lintEnabled = false
+        extension.lintEnabled.set(false)
 
         val result = detector.findAllBaselineFiles(project, extension)
 
@@ -57,7 +58,7 @@ class BaselineFileDetectorTest {
         lintBaseline.writeText("<baseline></baseline>")
 
         // Disable detekt to test only lint
-        extension.detektEnabled = false
+        extension.detektEnabled.set(false)
 
         val result = detector.findAllBaselineFiles(project, extension)
 
