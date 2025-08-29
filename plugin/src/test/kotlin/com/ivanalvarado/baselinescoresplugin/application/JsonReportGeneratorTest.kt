@@ -3,6 +3,7 @@ package com.ivanalvarado.baselinescoresplugin.application
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.ivanalvarado.baselinescoresplugin.BaselineType
+import com.ivanalvarado.baselinescoresplugin.ProjectInfo
 import com.ivanalvarado.baselinescoresplugin.domain.BaselineProcessingException
 import com.ivanalvarado.baselinescoresplugin.domain.FileScoringResult
 import com.ivanalvarado.baselinescoresplugin.domain.IssueScore
@@ -21,10 +22,11 @@ class JsonReportGeneratorTest {
     @Test
     fun `should generate valid JSON report with correct structure`() {
         val project = ProjectBuilder.builder().build()
+        val projectInfo = createTestProjectInfo(project)
         val moduleScores = createTestModuleScores()
         val totalProjectScore = -45
 
-        val outputPath = generator.generateJsonReport(project, moduleScores, totalProjectScore)
+        val outputPath = generator.generateJsonReport(projectInfo, moduleScores, totalProjectScore)
 
         try {
             val outputFile = File(outputPath)
@@ -32,7 +34,7 @@ class JsonReportGeneratorTest {
 
             val jsonContent = objectMapper.readTree(outputFile)
 
-            assertEquals(project.path, jsonContent["projectPath"].asText())
+            assertEquals(projectInfo.path, jsonContent["projectPath"].asText())
             assertEquals(totalProjectScore, jsonContent["projectTotalScore"].asInt())
             assertEquals(6, jsonContent["totalIssues"].asInt())
             assertTrue(jsonContent["generatedAt"].asText().isNotEmpty())
@@ -57,9 +59,10 @@ class JsonReportGeneratorTest {
     @Test
     fun `should create output directory if it does not exist`() {
         val project = ProjectBuilder.builder().build()
+        val projectInfo = createTestProjectInfo(project)
         val moduleScores = createTestModuleScores()
 
-        val outputPath = generator.generateJsonReport(project, moduleScores, -45)
+        val outputPath = generator.generateJsonReport(projectInfo, moduleScores, -45)
 
         try {
             val outputFile = File(outputPath)
@@ -75,10 +78,11 @@ class JsonReportGeneratorTest {
     @Test
     fun `should handle empty module scores`() {
         val project = ProjectBuilder.builder().build()
+        val projectInfo = createTestProjectInfo(project)
         val moduleScores = emptyList<FileScoringResult>()
         val totalProjectScore = 0
 
-        val outputPath = generator.generateJsonReport(project, moduleScores, totalProjectScore)
+        val outputPath = generator.generateJsonReport(projectInfo, moduleScores, totalProjectScore)
 
         try {
             val outputFile = File(outputPath)
@@ -97,6 +101,7 @@ class JsonReportGeneratorTest {
     @Test
     fun `should handle single file with multiple issues`() {
         val project = ProjectBuilder.builder().build()
+        val projectInfo = createTestProjectInfo(project)
         val moduleScores = listOf(
             FileScoringResult(
                 module = "app",
@@ -113,7 +118,7 @@ class JsonReportGeneratorTest {
             )
         )
 
-        val outputPath = generator.generateJsonReport(project, moduleScores, -44)
+        val outputPath = generator.generateJsonReport(projectInfo, moduleScores, -44)
 
         try {
             val outputFile = File(outputPath)
@@ -142,6 +147,7 @@ class JsonReportGeneratorTest {
     @Test
     fun `should handle multiple modules with different baseline types`() {
         val project = ProjectBuilder.builder().build()
+        val projectInfo = createTestProjectInfo(project)
         val moduleScores = listOf(
             FileScoringResult(
                 module = "app",
@@ -167,7 +173,7 @@ class JsonReportGeneratorTest {
             )
         )
 
-        val outputPath = generator.generateJsonReport(project, moduleScores, -11)
+        val outputPath = generator.generateJsonReport(projectInfo, moduleScores, -11)
 
         try {
             val outputFile = File(outputPath)
@@ -192,20 +198,31 @@ class JsonReportGeneratorTest {
     @Test
     fun `should throw BaselineProcessingException when file write fails`() {
         val project = ProjectBuilder.builder().build()
+        val projectInfo = createTestProjectInfo(project)
         val moduleScores = createTestModuleScores()
 
         // Create the build directory as a file to cause write failure
-        val buildDir = File(project.buildDir, "baseline-scores")
+        val buildDir = File(projectInfo.buildDir, "baseline-scores")
         buildDir.parentFile.mkdirs()
         buildDir.createNewFile()
 
         try {
             assertFailsWith<BaselineProcessingException.ReportGenerationFailed> {
-                generator.generateJsonReport(project, moduleScores, -45)
+                generator.generateJsonReport(projectInfo, moduleScores, -45)
             }
         } finally {
             buildDir.delete()
         }
+    }
+
+    private fun createTestProjectInfo(project: org.gradle.api.Project): ProjectInfo {
+        return ProjectInfo(
+            name = project.name,
+            path = project.path,
+            projectDir = project.projectDir,
+            buildDir = project.layout.buildDirectory.get().asFile,
+            subprojects = emptyList()
+        )
     }
 
     private fun createTestModuleScores(): List<FileScoringResult> {

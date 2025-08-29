@@ -1,7 +1,7 @@
 package com.ivanalvarado.baselinescoresplugin.domain
 
 import com.ivanalvarado.baselinescoresplugin.BaselineFileInfo
-import org.gradle.api.Project
+import com.ivanalvarado.baselinescoresplugin.ProjectInfo
 
 /**
  * Exception thrown when baseline processing fails
@@ -69,7 +69,7 @@ interface ScoreCalculator {
  */
 interface ReportGenerator {
     fun generateJsonReport(
-        project: Project,
+        projectInfo: ProjectInfo,
         moduleScores: List<FileScoringResult>,
         totalProjectScore: Int
     ): String

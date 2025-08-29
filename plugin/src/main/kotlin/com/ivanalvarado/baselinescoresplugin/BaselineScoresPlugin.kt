@@ -1,18 +1,20 @@
 package com.ivanalvarado.baselinescoresplugin
 
-import com.ivanalvarado.baselinescoresplugin.application.DefaultDomainServiceFactory
-import com.ivanalvarado.baselinescoresplugin.application.FindBaselineFilesUseCase
-import com.ivanalvarado.baselinescoresplugin.application.GenerateBaselineScoresUseCase
-import com.ivanalvarado.baselinescoresplugin.application.ValidateBaselineScoresUseCase
-import com.ivanalvarado.baselinescoresplugin.domain.BaselineProcessingException
-import com.ivanalvarado.baselinescoresplugin.domain.DomainServiceFactory
+import com.ivanalvarado.baselinescoresplugin.tasks.FindBaselineFilesTask
+import com.ivanalvarado.baselinescoresplugin.tasks.GenerateBaselineScoresTask
+import com.ivanalvarado.baselinescoresplugin.tasks.ValidateBaselineScoresTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.io.File
 
+/**
+ * Gradle plugin for calculating baseline scores from static analysis tools.
+ *
+ * This plugin is configuration cache compatible, meaning it extracts all necessary
+ * information from the Project during configuration time and stores it as serializable
+ * task properties.
+ */
 class BaselineScoresPlugin : Plugin<Project> {
-
-    private val serviceFactory: DomainServiceFactory = DefaultDomainServiceFactory()
-    private val baselineFileDetector = BaselineFileDetector()
 
     override fun apply(project: Project) {
         val extension =
@@ -27,20 +29,37 @@ class BaselineScoresPlugin : Plugin<Project> {
         project: Project,
         extension: BaselineScoresExtension
     ) {
-        project.task("findBaselineFiles") {
-            it.group = "baseline"
-            it.description = "Find all baseline files in the project and its modules"
-            it.doLast {
-                try {
-                    val useCase = FindBaselineFilesUseCase(
-                        baselineFileDetector,
-                        serviceFactory.createConsoleReporter()
-                    )
-                    useCase.execute(project, extension)
-                } catch (e: BaselineProcessingException) {
-                    handleError("Error finding baseline files", e)
-                }
+        project.tasks.register("findBaselineFiles", FindBaselineFilesTask::class.java) { task ->
+            task.group = "baseline"
+            task.description = "Find all baseline files in the project and its modules"
+
+            // Extract project information into task properties
+            task.projectDir.set(project.projectDir)
+            task.projectName.set(project.name)
+            task.projectPath.set(project.path)
+            task.buildDir.set(project.layout.buildDirectory.get().asFile)
+
+            // Extract subproject information
+            val subprojectInfo = project.subprojects.map { subproject ->
+                SubprojectInfo(
+                    name = subproject.name,
+                    path = subproject.path,
+                    projectDir = subproject.projectDir,
+                    buildDir = subproject.layout.buildDirectory.get().asFile,
+                    hasDetektPlugin = subproject.plugins.hasPlugin("io.gitlab.arturbosch.detekt"),
+                    hasAndroidPlugin = subproject.extensions.findByName("android") != null
+                )
             }
+            task.subprojects.set(subprojectInfo)
+
+            // Extract extension configuration
+            task.detektEnabled.set(extension.detektEnabled)
+            task.lintEnabled.set(extension.lintEnabled)
+            task.detektBaselineFileName.set(extension.detektBaselineFileName)
+            task.lintBaselineFileName.set(extension.lintBaselineFileName)
+            task.useDefaultDetektScoring.set(extension.useDefaultDetektScoring)
+            task.useDefaultLintScoring.set(extension.useDefaultLintScoring)
+            task.userScoringRules.set(extension.userScoringRules)
         }
     }
 
@@ -48,24 +67,41 @@ class BaselineScoresPlugin : Plugin<Project> {
         project: Project,
         extension: BaselineScoresExtension
     ) {
-        project.task("generateBaselineScores") {
-            it.group = "baseline"
-            it.description = "Generate baseline scores for the project"
-            it.doLast {
-                try {
-                    val useCase = GenerateBaselineScoresUseCase(
-                        baselineFileDetector,
-                        serviceFactory.createBaselineScorer(),
-                        serviceFactory.createReportGenerator(),
-                        serviceFactory.createConsoleReporter()
-                    )
+        project.tasks.register(
+            "generateBaselineScores",
+            GenerateBaselineScoresTask::class.java
+        ) { task ->
+            task.group = "baseline"
+            task.description = "Generate baseline scores for the project"
 
-                    val outputPath = useCase.execute(project, extension)
-                    println("Output file: $outputPath")
-                } catch (e: BaselineProcessingException) {
-                    handleError("Error generating baseline scores", e)
-                }
+            // Extract project information into task properties
+            task.projectDir.set(project.projectDir)
+            task.projectName.set(project.name)
+            task.projectPath.set(project.path)
+            task.buildDir.set(project.layout.buildDirectory.get().asFile)
+
+            // Extract subproject information
+            val subprojectInfo = project.subprojects.map { subproject ->
+                SubprojectInfo(
+                    name = subproject.name,
+                    path = subproject.path,
+                    projectDir = subproject.projectDir,
+                    buildDir = subproject.layout.buildDirectory.get().asFile,
+                    hasDetektPlugin = subproject.plugins.hasPlugin("io.gitlab.arturbosch.detekt"),
+                    hasAndroidPlugin = subproject.extensions.findByName("android") != null
+                )
             }
+            task.subprojects.set(subprojectInfo)
+
+            // Extract extension configuration
+            task.detektEnabled.set(extension.detektEnabled)
+            task.lintEnabled.set(extension.lintEnabled)
+            task.detektBaselineFileName.set(extension.detektBaselineFileName)
+            task.lintBaselineFileName.set(extension.lintBaselineFileName)
+            task.defaultIssuePoints.set(extension.defaultIssuePoints)
+            task.useDefaultDetektScoring.set(extension.useDefaultDetektScoring)
+            task.useDefaultLintScoring.set(extension.useDefaultLintScoring)
+            task.userScoringRules.set(extension.userScoringRules)
         }
     }
 
@@ -73,34 +109,42 @@ class BaselineScoresPlugin : Plugin<Project> {
         project: Project,
         extension: BaselineScoresExtension
     ) {
-        project.task("validateBaselineScores") {
-            it.group = "baseline"
-            it.description = "Validate current scores against baseline"
-            it.doLast {
-                try {
-                    val useCase = ValidateBaselineScoresUseCase(
-                        baselineFileDetector,
-                        serviceFactory.createBaselineScorer(),
-                        serviceFactory.createConsoleReporter()
-                    )
+        project.tasks.register(
+            "validateBaselineScores",
+            ValidateBaselineScoresTask::class.java
+        ) { task ->
+            task.group = "baseline"
+            task.description = "Validate current scores against baseline"
 
-                    val result = useCase.execute(project, extension)
+            // Extract project information into task properties
+            task.projectDir.set(project.projectDir)
+            task.projectName.set(project.name)
+            task.projectPath.set(project.path)
+            task.buildDir.set(project.layout.buildDirectory.get().asFile)
 
-                    if (!result.isValid) {
-                        throw RuntimeException("Baseline validation failed: ${result.message}")
-                    }
-                } catch (e: BaselineProcessingException) {
-                    handleError("Error validating baseline scores", e)
-                }
+            // Extract subproject information
+            val subprojectInfo = project.subprojects.map { subproject ->
+                SubprojectInfo(
+                    name = subproject.name,
+                    path = subproject.path,
+                    projectDir = subproject.projectDir,
+                    buildDir = subproject.layout.buildDirectory.get().asFile,
+                    hasDetektPlugin = subproject.plugins.hasPlugin("io.gitlab.arturbosch.detekt"),
+                    hasAndroidPlugin = subproject.extensions.findByName("android") != null
+                )
             }
-        }
-    }
+            task.subprojects.set(subprojectInfo)
 
-    private fun handleError(message: String, exception: BaselineProcessingException) {
-        println("$message: ${exception.message}")
-        exception.cause?.let { cause ->
-            println("Caused by: ${cause.message}")
+            // Extract extension configuration
+            task.detektEnabled.set(extension.detektEnabled)
+            task.lintEnabled.set(extension.lintEnabled)
+            task.detektBaselineFileName.set(extension.detektBaselineFileName)
+            task.lintBaselineFileName.set(extension.lintBaselineFileName)
+            task.defaultIssuePoints.set(extension.defaultIssuePoints)
+            task.minimumScoreThreshold.set(extension.minimumScoreThreshold)
+            task.useDefaultDetektScoring.set(extension.useDefaultDetektScoring)
+            task.useDefaultLintScoring.set(extension.useDefaultLintScoring)
+            task.userScoringRules.set(extension.userScoringRules)
         }
-        throw exception
     }
 }
