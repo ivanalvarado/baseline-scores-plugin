@@ -1,10 +1,12 @@
 package com.ivanalvarado.baselinescoresplugin.application
 
-import com.ivanalvarado.baselinescoresplugin.BaselineFileDetector
-import com.ivanalvarado.baselinescoresplugin.BaselineScoresExtension
+import com.ivanalvarado.baselinescoresplugin.ConfigCacheCompatibleBaselineFileDetector
+import com.ivanalvarado.baselinescoresplugin.ProjectInfo
+import com.ivanalvarado.baselinescoresplugin.ExtensionConfig
+import com.ivanalvarado.baselinescoresplugin.config.DetektDefaultScores
 import com.ivanalvarado.baselinescoresplugin.domain.BaselineScorer
 import com.ivanalvarado.baselinescoresplugin.domain.ConsoleReporter
-import org.gradle.api.Project
+import com.ivanalvarado.baselinescoresplugin.domain.ScoringConfiguration
 
 data class ValidationResult(
     val isValid: Boolean,
@@ -14,22 +16,22 @@ data class ValidationResult(
 )
 
 class ValidateBaselineScoresUseCase(
-    private val baselineFileDetector: BaselineFileDetector,
+    private val baselineFileDetector: ConfigCacheCompatibleBaselineFileDetector,
     private val baselineScorer: BaselineScorer,
     private val consoleReporter: ConsoleReporter
 ) {
 
-    fun execute(project: Project, extension: BaselineScoresExtension): ValidationResult {
-        val baselineFiles = baselineFileDetector.findAllBaselineFiles(project, extension)
-        val scoringConfiguration = extension.getScoringConfiguration()
+    fun execute(projectInfo: ProjectInfo, extensionConfig: ExtensionConfig): ValidationResult {
+        val baselineFiles = baselineFileDetector.findAllBaselineFiles(projectInfo, extensionConfig)
+        val scoringConfiguration = createScoringConfiguration(extensionConfig)
 
         println("Validating baseline scores...")
-        println("Threshold: ${extension.minimumScoreThreshold.get()}")
+        println("Threshold: ${extensionConfig.minimumScoreThreshold}")
 
         if (baselineFiles.isEmpty()) {
             val message = "No baseline files found - validation passed by default"
             println(message)
-            return ValidationResult(true, 0, extension.minimumScoreThreshold.get(), message)
+            return ValidationResult(true, 0, extensionConfig.minimumScoreThreshold, message)
         }
 
         val moduleScores = baselineFiles.map { info ->
@@ -39,12 +41,12 @@ class ValidateBaselineScoresUseCase(
         val totalScore = moduleScores.sumOf { it.totalScore }
         val normalizedScore =
             calculateNormalizedScore(totalScore, moduleScores.sumOf { it.totalIssues })
-        val isValid = normalizedScore >= extension.minimumScoreThreshold.get()
+        val isValid = normalizedScore >= extensionConfig.minimumScoreThreshold
 
         val message = if (isValid) {
-            "Validation PASSED: Score $normalizedScore meets threshold ${extension.minimumScoreThreshold.get()}"
+            "Validation PASSED: Score $normalizedScore meets threshold ${extensionConfig.minimumScoreThreshold}"
         } else {
-            "Validation FAILED: Score $normalizedScore below threshold ${extension.minimumScoreThreshold.get()}"
+            "Validation FAILED: Score $normalizedScore below threshold ${extensionConfig.minimumScoreThreshold}"
         }
 
         println("\nValidation Results:")
@@ -53,7 +55,29 @@ class ValidateBaselineScoresUseCase(
         println("Normalized score: $normalizedScore")
         println(message)
 
-        return ValidationResult(isValid, totalScore, extension.minimumScoreThreshold.get(), message)
+        return ValidationResult(isValid, totalScore, extensionConfig.minimumScoreThreshold, message)
+    }
+
+    private fun createScoringConfiguration(extensionConfig: ExtensionConfig): ScoringConfiguration {
+        val mergedRules = mutableMapOf<String, Int>()
+
+        if (extensionConfig.detektEnabled && extensionConfig.useDefaultDetektScoring) {
+            // Add default detekt scores when available
+            mergedRules.putAll(DetektDefaultScores.rules)
+        }
+
+        if (extensionConfig.lintEnabled && extensionConfig.useDefaultLintScoring) {
+            // Add default lint scores when available
+            // mergedRules.putAll(LintDefaultScores.rules)
+        }
+
+        // User scoring rules override defaults
+        mergedRules.putAll(extensionConfig.userScoringRules)
+
+        return ScoringConfiguration(
+            rules = mergedRules,
+            defaultPoints = extensionConfig.defaultIssuePoints
+        )
     }
 
     private fun calculateNormalizedScore(totalScore: Int, totalIssues: Int): Double {

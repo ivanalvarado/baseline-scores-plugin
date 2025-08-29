@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.ivanalvarado.baselinescoresplugin.domain.BaselineProcessingException
 import com.ivanalvarado.baselinescoresplugin.domain.FileScoringResult
 import com.ivanalvarado.baselinescoresplugin.domain.ReportGenerator
-import org.gradle.api.Project
+import com.ivanalvarado.baselinescoresplugin.ProjectInfo
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -15,18 +15,19 @@ class JsonReportGenerator : ReportGenerator {
     private val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
 
     override fun generateJsonReport(
-        project: Project,
+        projectInfo: ProjectInfo,
         moduleScores: List<FileScoringResult>,
         totalProjectScore: Int
     ): String {
         return try {
-            val buildDir = File(project.buildDir, "baseline-scores")
+            val buildDir = File(projectInfo.buildDir, "baseline-scores")
             buildDir.mkdirs()
 
             val outputFile = File(buildDir, "baseline-scores-results.json")
             val results = buildResultsStructure(moduleScores)
 
-            val finalOutput = buildFinalOutput(project.path, totalProjectScore, moduleScores, results)
+            val finalOutput =
+                buildFinalOutput(projectInfo.path, totalProjectScore, moduleScores, results)
 
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, finalOutput)
 
