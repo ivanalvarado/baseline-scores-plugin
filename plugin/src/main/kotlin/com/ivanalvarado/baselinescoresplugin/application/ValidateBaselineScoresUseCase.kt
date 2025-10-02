@@ -23,7 +23,7 @@ class ValidateBaselineScoresUseCase(
 
     fun execute(projectInfo: ProjectInfo, extensionConfig: ExtensionConfig): ValidationResult {
         val baselineFiles = baselineFileDetector.findAllBaselineFiles(projectInfo, extensionConfig)
-        val scoringConfiguration = createScoringConfiguration(extensionConfig)
+        val scoringConfiguration = extensionConfig.toScoringConfiguration()
 
         println("Validating baseline scores...")
         println("Threshold: ${extensionConfig.minimumScoreThreshold}")
@@ -56,28 +56,6 @@ class ValidateBaselineScoresUseCase(
         println(message)
 
         return ValidationResult(isValid, totalScore, extensionConfig.minimumScoreThreshold, message)
-    }
-
-    private fun createScoringConfiguration(extensionConfig: ExtensionConfig): ScoringConfiguration {
-        val mergedRules = mutableMapOf<String, Int>()
-
-        if (extensionConfig.detektEnabled && extensionConfig.useDefaultDetektScoring) {
-            // Add default detekt scores when available
-            mergedRules.putAll(DetektDefaultScores.rules)
-        }
-
-        if (extensionConfig.lintEnabled && extensionConfig.useDefaultLintScoring) {
-            // Add default lint scores when available
-            // mergedRules.putAll(LintDefaultScores.rules)
-        }
-
-        // User scoring rules override defaults
-        mergedRules.putAll(extensionConfig.userScoringRules)
-
-        return ScoringConfiguration(
-            rules = mergedRules,
-            defaultPoints = extensionConfig.defaultIssuePoints
-        )
     }
 
     private fun calculateNormalizedScore(totalScore: Int, totalIssues: Int): Double {

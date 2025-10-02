@@ -19,7 +19,7 @@ class GenerateBaselineScoresUseCase(
 
     fun execute(projectInfo: ProjectInfo, extensionConfig: ExtensionConfig): String {
         val baselineFiles = baselineFileDetector.findAllBaselineFiles(projectInfo, extensionConfig)
-        val scoringConfiguration = createScoringConfiguration(extensionConfig)
+        val scoringConfiguration = extensionConfig.toScoringConfiguration()
 
         printInitialInfo(baselineFiles, extensionConfig)
 
@@ -29,28 +29,6 @@ class GenerateBaselineScoresUseCase(
         printResults(moduleScores, totalProjectScore)
 
         return reportGenerator.generateJsonReport(projectInfo, moduleScores, totalProjectScore)
-    }
-
-    private fun createScoringConfiguration(extensionConfig: ExtensionConfig): com.ivanalvarado.baselinescoresplugin.domain.ScoringConfiguration {
-        val mergedRules = mutableMapOf<String, Int>()
-
-        if (extensionConfig.detektEnabled && extensionConfig.useDefaultDetektScoring) {
-            // Add default detekt scores when available
-            mergedRules.putAll(DetektDefaultScores.rules)
-        }
-
-        if (extensionConfig.lintEnabled && extensionConfig.useDefaultLintScoring) {
-            // Add default lint scores when available
-            // mergedRules.putAll(LintDefaultScores.rules)
-        }
-
-        // User scoring rules override defaults
-        mergedRules.putAll(extensionConfig.userScoringRules)
-
-        return com.ivanalvarado.baselinescoresplugin.domain.ScoringConfiguration(
-            rules = mergedRules,
-            defaultPoints = extensionConfig.defaultIssuePoints
-        )
     }
 
     private fun printInitialInfo(
