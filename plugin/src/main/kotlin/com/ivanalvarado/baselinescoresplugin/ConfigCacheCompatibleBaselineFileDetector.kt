@@ -14,57 +14,79 @@ class ConfigCacheCompatibleBaselineFileDetector {
         projectInfo: ProjectInfo,
         extensionConfig: ExtensionConfig
     ): List<BaselineFileInfo> {
-        val baselineFiles = mutableListOf<BaselineFileInfo>()
+        val allProjectsToScan = buildProjectListIncludingRoot(projectInfo)
 
-        // Process root project and all subprojects
-        val allProjects = listOf(
-            SubprojectInfo(
-                name = projectInfo.name,
-                path = projectInfo.path,
-                projectDir = projectInfo.projectDir,
-                buildDir = projectInfo.buildDir,
-                hasDetektPlugin = false, // Will be checked through file system
-                hasAndroidPlugin = false // Will be checked through file system
-            )
-        ) + projectInfo.subprojects
-
-        for (projectData in allProjects) {
-            if (extensionConfig.detektEnabled) {
-                findDetektBaseline(
-                    projectData,
-                    extensionConfig.detektBaselineFileName
-                )?.let { file ->
-                    baselineFiles.add(BaselineFileInfo(file, BaselineType.DETEKT, projectData.name))
-                }
-            }
-
-            if (extensionConfig.lintEnabled) {
-                findLintBaseline(projectData, extensionConfig.lintBaselineFileName)?.let { file ->
-                    baselineFiles.add(BaselineFileInfo(file, BaselineType.LINT, projectData.name))
-                }
-            }
+        return allProjectsToScan.flatMap { projectData ->
+            findBaselinesInProject(projectData, extensionConfig)
         }
-
-        return baselineFiles
     }
 
-    private fun findDetektBaseline(projectData: SubprojectInfo, fileName: String): File? {
-        // Check default location only if the file name matches expected detekt pattern
-        if (fileName.contains("detekt")) {
-            val defaultBaseline = File(projectData.projectDir, fileName)
-            return if (defaultBaseline.exists()) defaultBaseline else null
-        }
+    private fun buildProjectListIncludingRoot(projectInfo: ProjectInfo): List<SubprojectInfo> {
+        val rootProjectAsSubproject = SubprojectInfo(
+            name = projectInfo.name,
+            path = projectInfo.path,
+            projectDir = projectInfo.projectDir,
+            buildDir = projectInfo.buildDir,
+            hasDetektPlugin = false,
+            hasAndroidPlugin = false
+        )
 
-        return null
+        return listOf(rootProjectAsSubproject) + projectInfo.subprojects
     }
 
-    private fun findLintBaseline(projectData: SubprojectInfo, fileName: String): File? {
-        // Check default location only if the file name matches expected lint pattern
-        if (fileName.contains("lint")) {
-            val defaultBaseline = File(projectData.projectDir, fileName)
-            return if (defaultBaseline.exists()) defaultBaseline else null
+    private fun findBaselinesInProject(
+        projectData: SubprojectInfo,
+        extensionConfig: ExtensionConfig
+    ): List<BaselineFileInfo> {
+        val baselines = mutableListOf<BaselineFileInfo>()
+
+        if (extensionConfig.detektEnabled) {
+            findDetektBaselineFile(projectData, extensionConfig.detektBaselineFileName)
+                ?.let { file ->
+                    baselines.add(
+                        BaselineFileInfo(
+                            file,
+                            BaselineType.DETEKT,
+                            projectData.name
+                        )
+                    )
+                }
         }
 
-        return null
+        if (extensionConfig.lintEnabled) {
+            findLintBaselineFile(projectData, extensionConfig.lintBaselineFileName)
+                ?.let { file ->
+                    baselines.add(
+                        BaselineFileInfo(
+                            file,
+                            BaselineType.LINT,
+                            projectData.name
+                        )
+                    )
+                }
+        }
+
+        return baselines
+    }
+
+    private fun findDetektBaselineFile(projectData: SubprojectInfo, fileName: String): File? {
+        return findBaselineFileIfNameMatches(projectData.projectDir, fileName, "detekt")
+    }
+
+    private fun findLintBaselineFile(projectData: SubprojectInfo, fileName: String): File? {
+        return findBaselineFileIfNameMatches(projectData.projectDir, fileName, "lint")
+    }
+
+    private fun findBaselineFileIfNameMatches(
+        projectDir: File,
+        fileName: String,
+        expectedPattern: String
+    ): File? {
+        if (!fileName.contains(expectedPattern)) {
+            return null
+        }
+
+        val baselineFile = File(projectDir, fileName)
+        return if (baselineFile.exists()) baselineFile else null
     }
 }

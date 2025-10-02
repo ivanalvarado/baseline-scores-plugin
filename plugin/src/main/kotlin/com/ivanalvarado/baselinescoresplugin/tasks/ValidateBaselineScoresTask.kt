@@ -7,6 +7,9 @@ import com.ivanalvarado.baselinescoresplugin.ProjectInfo
 import com.ivanalvarado.baselinescoresplugin.SubprojectInfo
 import com.ivanalvarado.baselinescoresplugin.ExtensionConfig
 import com.ivanalvarado.baselinescoresplugin.domain.BaselineProcessingException
+import com.ivanalvarado.baselinescoresplugin.HasProjectProperties
+import com.ivanalvarado.baselinescoresplugin.HasSubprojectProperties
+import com.ivanalvarado.baselinescoresplugin.HasExtensionProperties
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ListProperty
@@ -22,34 +25,37 @@ import org.gradle.api.tasks.TaskAction
  * This task is configuration cache compatible as it only depends on serializable
  * properties and doesn't hold references to Gradle Project objects.
  */
-abstract class ValidateBaselineScoresTask : DefaultTask() {
+abstract class ValidateBaselineScoresTask : DefaultTask(),
+    HasProjectProperties,
+    HasSubprojectProperties,
+    HasExtensionProperties {
 
     @get:InputDirectory
-    abstract val projectDir: DirectoryProperty
+    abstract override val projectDir: DirectoryProperty
 
     @get:Input
-    abstract val projectName: Property<String>
+    abstract override val projectName: Property<String>
 
     @get:Input
-    abstract val projectPath: Property<String>
+    abstract override val projectPath: Property<String>
 
     @get:InputDirectory
-    abstract val buildDir: DirectoryProperty
+    abstract override val buildDir: DirectoryProperty
 
     @get:Input
-    abstract val subprojects: ListProperty<SubprojectInfo>
+    abstract override val subprojects: ListProperty<SubprojectInfo>
 
     @get:Input
-    abstract val detektEnabled: Property<Boolean>
+    abstract override val detektEnabled: Property<Boolean>
 
     @get:Input
-    abstract val lintEnabled: Property<Boolean>
+    abstract override val lintEnabled: Property<Boolean>
 
     @get:Input
-    abstract val detektBaselineFileName: Property<String>
+    abstract override val detektBaselineFileName: Property<String>
 
     @get:Input
-    abstract val lintBaselineFileName: Property<String>
+    abstract override val lintBaselineFileName: Property<String>
 
     @get:Input
     abstract val defaultIssuePoints: Property<Int>
@@ -58,44 +64,20 @@ abstract class ValidateBaselineScoresTask : DefaultTask() {
     abstract val minimumScoreThreshold: Property<Double>
 
     @get:Input
-    abstract val useDefaultDetektScoring: Property<Boolean>
+    abstract override val useDefaultDetektScoring: Property<Boolean>
 
     @get:Input
-    abstract val useDefaultLintScoring: Property<Boolean>
+    abstract override val useDefaultLintScoring: Property<Boolean>
 
     @get:Input
-    abstract val userScoringRules: MapProperty<String, Int>
+    abstract override val userScoringRules: MapProperty<String, Int>
 
     @TaskAction
     fun execute() {
         try {
-            val serviceFactory = DefaultDomainServiceFactory()
-            val baselineFileDetector = ConfigCacheCompatibleBaselineFileDetector()
-            val useCase = ValidateBaselineScoresUseCase(
-                baselineFileDetector,
-                serviceFactory.createBaselineScorer(),
-                serviceFactory.createConsoleReporter()
-            )
-
-            val projectInfo = ProjectInfo(
-                name = projectName.get(),
-                path = projectPath.get(),
-                projectDir = projectDir.get().asFile,
-                buildDir = buildDir.get().asFile,
-                subprojects = subprojects.get()
-            )
-
-            val extensionConfig = ExtensionConfig(
-                detektEnabled = detektEnabled.get(),
-                lintEnabled = lintEnabled.get(),
-                detektBaselineFileName = detektBaselineFileName.get(),
-                lintBaselineFileName = lintBaselineFileName.get(),
-                defaultIssuePoints = defaultIssuePoints.get(),
-                minimumScoreThreshold = minimumScoreThreshold.get(),
-                useDefaultDetektScoring = useDefaultDetektScoring.get(),
-                useDefaultLintScoring = useDefaultLintScoring.get(),
-                userScoringRules = userScoringRules.get()
-            )
+            val useCase = createValidateBaselineScoresUseCase()
+            val projectInfo = extractProjectInfo()
+            val extensionConfig = extractExtensionConfig()
 
             val result = useCase.execute(projectInfo, extensionConfig)
 
@@ -103,15 +85,43 @@ abstract class ValidateBaselineScoresTask : DefaultTask() {
                 throw RuntimeException("Baseline validation failed: ${result.message}")
             }
         } catch (e: BaselineProcessingException) {
-            handleError("Error validating baseline scores", e)
+            logger.error("Failed to validate baseline scores: ${e.message}", e)
+            throw e
         }
     }
 
-    private fun handleError(message: String, exception: BaselineProcessingException) {
-        println("$message: ${exception.message}")
-        exception.cause?.let { cause ->
-            println("Caused by: ${cause.message}")
-        }
-        throw exception
+    private fun createValidateBaselineScoresUseCase(): ValidateBaselineScoresUseCase {
+        val serviceFactory = DefaultDomainServiceFactory()
+        val baselineFileDetector = ConfigCacheCompatibleBaselineFileDetector()
+
+        return ValidateBaselineScoresUseCase(
+            baselineFileDetector,
+            serviceFactory.createBaselineScorer(),
+            serviceFactory.createConsoleReporter()
+        )
+    }
+
+    private fun extractProjectInfo(): ProjectInfo {
+        return ProjectInfo(
+            name = projectName.get(),
+            path = projectPath.get(),
+            projectDir = projectDir.get().asFile,
+            buildDir = buildDir.get().asFile,
+            subprojects = subprojects.get()
+        )
+    }
+
+    private fun extractExtensionConfig(): ExtensionConfig {
+        return ExtensionConfig(
+            detektEnabled = detektEnabled.get(),
+            lintEnabled = lintEnabled.get(),
+            detektBaselineFileName = detektBaselineFileName.get(),
+            lintBaselineFileName = lintBaselineFileName.get(),
+            defaultIssuePoints = defaultIssuePoints.get(),
+            minimumScoreThreshold = minimumScoreThreshold.get(),
+            useDefaultDetektScoring = useDefaultDetektScoring.get(),
+            useDefaultLintScoring = useDefaultLintScoring.get(),
+            userScoringRules = userScoringRules.get()
+        )
     }
 }

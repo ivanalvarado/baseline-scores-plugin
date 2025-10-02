@@ -3,73 +3,129 @@ package com.ivanalvarado.baselinescoresplugin.application
 import com.ivanalvarado.baselinescoresplugin.BaselineFileInfo
 import com.ivanalvarado.baselinescoresplugin.domain.ConsoleReporter
 import com.ivanalvarado.baselinescoresplugin.domain.FileScoringResult
+import com.ivanalvarado.baselinescoresplugin.domain.IssueScore
 
 class ConsoleReporterImpl : ConsoleReporter {
 
     override fun printBaselineFilesList(baselineFiles: List<BaselineFileInfo>) {
-        if (baselineFiles.isEmpty()) {
+        if (noBaselinesWereFound(baselineFiles)) {
             println("No baseline files found in the project.")
         } else {
-            println("Found ${baselineFiles.size} baseline file(s):")
-            baselineFiles.forEach { info ->
-                println("  [${info.type}] ${info.module}: ${info.file.absolutePath}")
-            }
+            printFoundBaselineFiles(baselineFiles)
+        }
+    }
+
+    private fun noBaselinesWereFound(baselineFiles: List<BaselineFileInfo>): Boolean {
+        return baselineFiles.isEmpty()
+    }
+
+    private fun printFoundBaselineFiles(baselineFiles: List<BaselineFileInfo>) {
+        println("Found ${baselineFiles.size} baseline file(s):")
+        baselineFiles.forEach { info ->
+            println("  [${info.type}] ${info.module}: ${info.file.absolutePath}")
         }
     }
 
     override fun printModuleScore(result: FileScoringResult) {
-        println("\n[${result.type}] Module: ${result.module}")
-        println("  Total issues: ${result.totalIssues}, Total score: ${result.totalScore}")
+        printModuleHeader(result)
+        printModuleTotals(result)
 
-        if (result.fileBreakdown.isNotEmpty()) {
-            println("  File breakdown:")
-            result.fileBreakdown.forEach { (fileName, issueBreakdown) ->
-                println("    $fileName:")
-                issueBreakdown.values
-                    .sortedByDescending { it.count }
-                    .forEach { issue ->
-                        println("      ${issue.issueType}: ${issue.count} issues × ${issue.pointsPerIssue} points = ${issue.totalPoints}")
-                    }
-            }
+        if (moduleHasIssues(result)) {
+            printFileBreakdown(result)
         }
+    }
+
+    private fun printModuleHeader(result: FileScoringResult) {
+        println("\n[${result.type}] Module: ${result.module}")
+    }
+
+    private fun printModuleTotals(result: FileScoringResult) {
+        println("  Total issues: ${result.totalIssues}, Total score: ${result.totalScore}")
+    }
+
+    private fun moduleHasIssues(result: FileScoringResult): Boolean {
+        return result.fileBreakdown.isNotEmpty()
+    }
+
+    private fun printFileBreakdown(result: FileScoringResult) {
+        println("  File breakdown:")
+        result.fileBreakdown.forEach { (fileName, issuesInFile) ->
+            printIssuesForFile(fileName, issuesInFile)
+        }
+    }
+
+    private fun printIssuesForFile(fileName: String, issuesInFile: Map<String, IssueScore>) {
+        println("    $fileName:")
+
+        val issuesSortedByFrequency = issuesInFile.values.sortedByDescending { it.count }
+        issuesSortedByFrequency.forEach { issue ->
+            printIssueDetail(issue)
+        }
+    }
+
+    private fun printIssueDetail(issue: IssueScore) {
+        println("      ${issue.issueType}: ${issue.count} issues × ${issue.pointsPerIssue} points = ${issue.totalPoints}")
     }
 
     override fun printProjectSummary(totalScore: Int, moduleScores: List<FileScoringResult>) {
-        println("\n" + "=".repeat(50))
-        println("PROJECT SUMMARY")
-        println("=".repeat(50))
-        println("Total project score: $totalScore")
-        println("Total modules analyzed: ${moduleScores.size}")
-        println("Total issues: ${moduleScores.sumOf { it.totalIssues }}")
+        printSectionSeparator()
+        printSummaryHeader()
+        printSectionSeparator()
 
-        val issueTypeSummary = buildIssueTypeSummary(moduleScores)
-        printMostCommonIssues(issueTypeSummary)
+        printOverallStatistics(totalScore, moduleScores)
+
+        val issueFrequencyMap = calculateIssueFrequencies(moduleScores)
+        printTopIssues(issueFrequencyMap)
     }
 
-    private fun buildIssueTypeSummary(moduleScores: List<FileScoringResult>): Map<String, Int> {
-        val issueTypeSummary = mutableMapOf<String, Int>()
+    private fun printSectionSeparator() {
+        println("=".repeat(50))
+    }
 
-        moduleScores.forEach { result ->
-            result.fileBreakdown.forEach { (_, issueBreakdown) ->
-                issueBreakdown.forEach { (issueType, issueScore) ->
-                    issueTypeSummary[issueType] =
-                        issueTypeSummary.getOrDefault(issueType, 0) + issueScore.count
+    private fun printSummaryHeader() {
+        println("PROJECT SUMMARY")
+    }
+
+    private fun printOverallStatistics(totalScore: Int, moduleScores: List<FileScoringResult>) {
+        val totalIssuesAcrossAllModules = moduleScores.sumOf { it.totalIssues }
+
+        println("Total project score: $totalScore")
+        println("Total modules analyzed: ${moduleScores.size}")
+        println("Total issues: $totalIssuesAcrossAllModules")
+    }
+
+    private fun calculateIssueFrequencies(moduleScores: List<FileScoringResult>): Map<String, Int> {
+        val frequencyMap = mutableMapOf<String, Int>()
+
+        moduleScores.forEach { moduleResult ->
+            moduleResult.fileBreakdown.forEach { (_, issuesInFile) ->
+                issuesInFile.forEach { (issueType, issueScore) ->
+                    val currentFrequency = frequencyMap.getOrDefault(issueType, 0)
+                    frequencyMap[issueType] = currentFrequency + issueScore.count
                 }
             }
         }
 
-        return issueTypeSummary
+        return frequencyMap
     }
 
-    private fun printMostCommonIssues(issueTypeSummary: Map<String, Int>) {
-        if (issueTypeSummary.isNotEmpty()) {
-            println("\nMost common issues:")
-            issueTypeSummary.toList()
-                .sortedByDescending { it.second }
-                .take(5)
-                .forEach { (issueType, count) ->
-                    println("  $issueType: $count occurrences")
-                }
+    private fun printTopIssues(issueFrequencyMap: Map<String, Int>) {
+        if (noIssuesWereFound(issueFrequencyMap)) {
+            return
         }
+
+        println("\nMost common issues:")
+
+        val topFiveIssues = issueFrequencyMap.toList()
+            .sortedByDescending { (_, frequency) -> frequency }
+            .take(5)
+
+        topFiveIssues.forEach { (issueType, frequency) ->
+            println("  $issueType: $frequency occurrences")
+        }
+    }
+
+    private fun noIssuesWereFound(issueFrequencyMap: Map<String, Int>): Boolean {
+        return issueFrequencyMap.isEmpty()
     }
 }

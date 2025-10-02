@@ -11,21 +11,10 @@ class DetektBaselineParser : BaselineParser {
 
     override fun parseIssues(baselineFileInfo: BaselineFileInfo): Map<String, Int> {
         return try {
-            val xmlContent = baselineFileInfo.file.readText()
-            val document = DocumentHelper.parseText(xmlContent)
+            val document = parseXmlDocument(baselineFileInfo)
+            val issueElements = extractIssueElements(document)
 
-            val currentIssuesElement = document.rootElement.element("CurrentIssues")
-            val issueElements = currentIssuesElement?.elements("ID") ?: emptyList()
-
-            val issueBreakdown = mutableMapOf<String, Int>()
-
-            issueElements.forEach { element ->
-                val issueId = element.text
-                val issueType = extractIssueType(issueId)
-                issueBreakdown[issueType] = issueBreakdown.getOrDefault(issueType, 0) + 1
-            }
-
-            issueBreakdown
+            countIssuesByType(issueElements)
         } catch (e: Exception) {
             throw BaselineProcessingException.FileParsingFailed(baselineFileInfo.file.name, e)
         }
@@ -33,37 +22,86 @@ class DetektBaselineParser : BaselineParser {
 
     override fun parseIssuesWithFileNames(baselineFileInfo: BaselineFileInfo): Map<String, Map<String, Int>> {
         return try {
-            val xmlContent = baselineFileInfo.file.readText()
-            val document = DocumentHelper.parseText(xmlContent)
+            val document = parseXmlDocument(baselineFileInfo)
+            val issueElements = extractIssueElements(document)
 
-            val currentIssuesElement = document.rootElement.element("CurrentIssues")
-            val issueElements = currentIssuesElement?.elements("ID") ?: emptyList()
-
-            val fileIssueBreakdown = mutableMapOf<String, MutableMap<String, Int>>()
-
-            issueElements.forEach { element ->
-                val issueId = element.text
-                val issueType = extractIssueType(issueId)
-                val fileName = extractFileName(issueId)
-
-                val fileMap = fileIssueBreakdown.getOrPut(fileName) { mutableMapOf() }
-                fileMap[issueType] = fileMap.getOrDefault(issueType, 0) + 1
-            }
-
-            fileIssueBreakdown
+            groupIssuesByFileAndType(issueElements)
         } catch (e: Exception) {
             throw BaselineProcessingException.FileParsingFailed(baselineFileInfo.file.name, e)
         }
     }
 
-    private fun extractIssueType(issueId: String): String {
-        // Extract issue type from ID format like "FunctionNaming:BookmarksScreen.kt$..."
-        return issueId.substringBefore(':').takeIf { it.isNotEmpty() } ?: "Unknown"
+    private fun parseXmlDocument(baselineFileInfo: BaselineFileInfo): org.dom4j.Document {
+        val xmlContent = baselineFileInfo.file.readText()
+        return DocumentHelper.parseText(xmlContent)
     }
 
-    private fun extractFileName(issueId: String): String {
-        // Extract file name from ID format like "FunctionNaming:BookmarksScreen.kt$..."
-        val afterColon = issueId.substringAfter(':', "")
-        return afterColon.substringBefore('$').takeIf { it.isNotEmpty() } ?: "Unknown"
+    private fun extractIssueElements(document: org.dom4j.Document): List<org.dom4j.Element> {
+        val currentIssuesElement = document.rootElement.element("CurrentIssues")
+        return currentIssuesElement?.elements("ID") ?: emptyList()
+    }
+
+    private fun countIssuesByType(issueElements: List<org.dom4j.Element>): Map<String, Int> {
+        val issueBreakdown = mutableMapOf<String, Int>()
+
+        issueElements.forEach { element ->
+            val issueId = element.text
+            val issueType = extractIssueTypeFrom(issueId)
+
+            val currentCount = issueBreakdown.getOrDefault(issueType, 0)
+            issueBreakdown[issueType] = currentCount + 1
+        }
+
+        return issueBreakdown
+    }
+
+    private fun groupIssuesByFileAndType(issueElements: List<org.dom4j.Element>): Map<String, Map<String, Int>> {
+        val fileIssueBreakdown = mutableMapOf<String, MutableMap<String, Int>>()
+
+        issueElements.forEach { element ->
+            val issueId = element.text
+            val issueType = extractIssueTypeFrom(issueId)
+            val fileName = extractFileNameFrom(issueId)
+
+            val issuesForFile = fileIssueBreakdown.getOrPut(fileName) { mutableMapOf() }
+            val currentCount = issuesForFile.getOrDefault(issueType, 0)
+            issuesForFile[issueType] = currentCount + 1
+        }
+
+        return fileIssueBreakdown
+    }
+
+    private fun extractIssueTypeFrom(issueId: String): String {
+        val issueTypeBeforeColon = issueId.substringBefore(':')
+
+        return if (issueTypeIsValid(issueTypeBeforeColon)) {
+            issueTypeBeforeColon
+        } else {
+            UNKNOWN_ISSUE_TYPE
+        }
+    }
+
+    private fun extractFileNameFrom(issueId: String): String {
+        val contentAfterColon = issueId.substringAfter(':', "")
+        val fileNameBeforeDollar = contentAfterColon.substringBefore('$')
+
+        return if (fileNameIsValid(fileNameBeforeDollar)) {
+            fileNameBeforeDollar
+        } else {
+            UNKNOWN_FILE_NAME
+        }
+    }
+
+    private fun issueTypeIsValid(issueType: String): Boolean {
+        return issueType.isNotEmpty()
+    }
+
+    private fun fileNameIsValid(fileName: String): Boolean {
+        return fileName.isNotEmpty()
+    }
+
+    private companion object {
+        const val UNKNOWN_ISSUE_TYPE = "Unknown"
+        const val UNKNOWN_FILE_NAME = "Unknown"
     }
 }

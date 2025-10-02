@@ -1,6 +1,7 @@
 package com.ivanalvarado.baselinescoresplugin.integration
 
 import com.ivanalvarado.baselinescoresplugin.BaselineScoresExtension
+import com.ivanalvarado.baselinescoresplugin.ExtensionConfig
 import org.gradle.testfixtures.ProjectBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,6 +14,20 @@ class PluginConfigurationExampleTest {
     private fun createExtension(): BaselineScoresExtension {
         val project = ProjectBuilder.builder().build()
         return project.objects.newInstance(BaselineScoresExtension::class.java)
+    }
+
+    private fun BaselineScoresExtension.toExtensionConfig(): ExtensionConfig {
+        return ExtensionConfig(
+            detektEnabled = detektEnabled.get(),
+            lintEnabled = lintEnabled.get(),
+            detektBaselineFileName = detektBaselineFileName.get(),
+            lintBaselineFileName = lintBaselineFileName.get(),
+            defaultIssuePoints = defaultIssuePoints.get(),
+            minimumScoreThreshold = minimumScoreThreshold.get(),
+            useDefaultDetektScoring = useDefaultDetektScoring.get(),
+            useDefaultLintScoring = useDefaultLintScoring.get(),
+            userScoringRules = userScoringRules.get()
+        )
     }
 
     @Test
@@ -38,7 +53,7 @@ class PluginConfigurationExampleTest {
             )
         }
 
-        val config = extension.getScoringConfiguration()
+        val config = extension.toExtensionConfig().toScoringConfiguration()
 
         // Verify configuration
         assertEquals("my-baseline-scores.json", extension.outputFile.get())
@@ -88,7 +103,7 @@ class PluginConfigurationExampleTest {
             )
         }
 
-        val config = extension.getScoringConfiguration()
+        val config = extension.toExtensionConfig().toScoringConfiguration()
 
         // Critical issues should have the highest penalties
         assertEquals(-25, config.getPointsForIssue("UnsafeCallOnNullableType"))
@@ -143,7 +158,7 @@ class PluginConfigurationExampleTest {
             )
         }
 
-        val config = extension.getScoringConfiguration()
+        val config = extension.toExtensionConfig().toScoringConfiguration()
 
         // Critical issues should block builds
         assertEquals(-50, config.getPointsForIssue("UnsafeCallOnNullableType"))
