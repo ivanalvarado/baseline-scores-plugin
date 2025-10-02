@@ -75,7 +75,8 @@ abstract class FindBaselineFilesTask : DefaultTask(),
 
             useCase.execute(projectInfo, extensionConfig)
         } catch (e: BaselineProcessingException) {
-            handleError("Error finding baseline files", e)
+            logger.error("Failed to find baseline files: ${e.message}", e)
+            throw e
         }
     }
 
@@ -111,13 +112,5 @@ abstract class FindBaselineFilesTask : DefaultTask(),
             useDefaultLintScoring = useDefaultLintScoring.get(),
             userScoringRules = userScoringRules.get()
         )
-    }
-
-    private fun handleError(message: String, exception: BaselineProcessingException) {
-        println("$message: ${exception.message}")
-        exception.cause?.let { cause ->
-            println("Caused by: ${cause.message}")
-        }
-        throw exception
     }
 }

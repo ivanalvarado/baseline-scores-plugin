@@ -12,6 +12,20 @@ class BaselineScoresExtensionTest {
         return project.objects.newInstance(BaselineScoresExtension::class.java)
     }
 
+    private fun BaselineScoresExtension.toExtensionConfig(): ExtensionConfig {
+        return ExtensionConfig(
+            detektEnabled = detektEnabled.get(),
+            lintEnabled = lintEnabled.get(),
+            detektBaselineFileName = detektBaselineFileName.get(),
+            lintBaselineFileName = lintBaselineFileName.get(),
+            defaultIssuePoints = defaultIssuePoints.get(),
+            minimumScoreThreshold = minimumScoreThreshold.get(),
+            useDefaultDetektScoring = useDefaultDetektScoring.get(),
+            useDefaultLintScoring = useDefaultLintScoring.get(),
+            userScoringRules = userScoringRules.get()
+        )
+    }
+
     @Test
     fun `should have default configuration`() {
         val extension = createExtension()
@@ -29,7 +43,7 @@ class BaselineScoresExtensionTest {
         val extension = createExtension()
         extension.issueScore("FunctionNaming", -10)
 
-        val config = extension.getScoringConfiguration()
+        val config = extension.toExtensionConfig().toScoringConfiguration()
 
         assertEquals(-10, config.getPointsForIssue("FunctionNaming"))
         assertEquals(-5, config.getPointsForIssue("UnknownIssue")) // still uses default
@@ -46,7 +60,7 @@ class BaselineScoresExtensionTest {
             )
         )
 
-        val config = extension.getScoringConfiguration()
+        val config = extension.toExtensionConfig().toScoringConfiguration()
 
         assertEquals(-8, config.getPointsForIssue("FunctionNaming"))
         assertEquals(-15, config.getPointsForIssue("LongParameterList"))
@@ -59,12 +73,12 @@ class BaselineScoresExtensionTest {
         val extension = createExtension()
 
         // First check default value
-        val defaultConfig = extension.getScoringConfiguration()
+        val defaultConfig = extension.toExtensionConfig().toScoringConfiguration()
         assertEquals(-5, defaultConfig.getPointsForIssue("FunctionNaming"))
 
         // Override with custom value
         extension.issueScore("FunctionNaming", -20)
-        val customConfig = extension.getScoringConfiguration()
+        val customConfig = extension.toExtensionConfig().toScoringConfiguration()
         assertEquals(-20, customConfig.getPointsForIssue("FunctionNaming"))
     }
 
@@ -73,7 +87,7 @@ class BaselineScoresExtensionTest {
         val extension = createExtension()
         extension.issueScore("CustomIssue", -50)
 
-        val config = extension.getScoringConfiguration()
+        val config = extension.toExtensionConfig().toScoringConfiguration()
 
         // Should have default rules
         assertEquals(-5, config.getPointsForIssue("FunctionNaming"))
@@ -89,7 +103,7 @@ class BaselineScoresExtensionTest {
         val extension = createExtension()
         extension.defaultIssuePoints.set(-12)
 
-        val config = extension.getScoringConfiguration()
+        val config = extension.toExtensionConfig().toScoringConfiguration()
 
         assertEquals(-12, config.getPointsForIssue("UnknownIssue"))
         // Default rules should still apply
@@ -99,7 +113,7 @@ class BaselineScoresExtensionTest {
     @Test
     fun `should have comprehensive default rules for common detekt issues`() {
         val extension = createExtension()
-        val config = extension.getScoringConfiguration()
+        val config = extension.toExtensionConfig().toScoringConfiguration()
 
         // Test some key default rules
         assertEquals(-5, config.getPointsForIssue("FunctionNaming"))
@@ -129,7 +143,7 @@ class BaselineScoresExtensionTest {
             )
         }
 
-        val config = extension.getScoringConfiguration()
+        val config = extension.toExtensionConfig().toScoringConfiguration()
 
         assertEquals(-8, config.defaultPoints)
         assertEquals(-10, config.getPointsForIssue("CustomIssue1"))

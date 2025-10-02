@@ -1,7 +1,5 @@
 package com.ivanalvarado.baselinescoresplugin
 
-import com.ivanalvarado.baselinescoresplugin.config.DetektDefaultScores
-import com.ivanalvarado.baselinescoresplugin.domain.ScoringConfiguration
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
@@ -126,35 +124,5 @@ abstract class BaselineScoresExtension @Inject constructor(private val objects: 
      */
     fun issueScores(scores: Map<String, Int>) {
         userScoringRules.putAll(scores)
-    }
-
-    /**
-     * Build and merge the scoring configuration.
-     *
-     * The logic is as follows:
-     *   1. Start with an empty set of rules.
-     *   2. If Detekt is enabled and default Detekt scoring is enabled, add all defaults.
-     *   3. If Lint is enabled and default Lint scoring is enabled, add all defaults (future).
-     *   4. User scoring rules are applied last, overwriting any defaults.
-     *
-     * @return ScoringConfiguration with merged rules and fallback score.
-     */
-    fun getScoringConfiguration(): ScoringConfiguration {
-        val mergedRules = mutableMapOf<String, Int>()
-
-        if (detektEnabled.get() && useDefaultDetektScoring.get()) {
-            mergedRules.putAll(DetektDefaultScores.rules)
-        }
-
-        if (lintEnabled.get() && useDefaultLintScoring.get()) {
-            // Future: mergedRules.putAll(LintDefaultScores.rules)
-        }
-
-        mergedRules.putAll(userScoringRules.get())
-
-        return ScoringConfiguration(
-            rules = mergedRules,
-            defaultPoints = defaultIssuePoints.get()
-        )
     }
 }

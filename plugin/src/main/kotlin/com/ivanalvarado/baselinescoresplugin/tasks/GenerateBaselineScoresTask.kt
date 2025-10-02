@@ -79,7 +79,8 @@ abstract class GenerateBaselineScoresTask : DefaultTask(),
             val outputPath = useCase.execute(projectInfo, extensionConfig)
             println("Output file: $outputPath")
         } catch (e: BaselineProcessingException) {
-            handleError("Error generating baseline scores", e)
+            logger.error("Failed to generate baseline scores: ${e.message}", e)
+            throw e
         }
     }
 
@@ -117,13 +118,5 @@ abstract class GenerateBaselineScoresTask : DefaultTask(),
             useDefaultLintScoring = useDefaultLintScoring.get(),
             userScoringRules = userScoringRules.get()
         )
-    }
-
-    private fun handleError(message: String, exception: BaselineProcessingException) {
-        println("$message: ${exception.message}")
-        exception.cause?.let { cause ->
-            println("Caused by: ${cause.message}")
-        }
-        throw exception
     }
 }

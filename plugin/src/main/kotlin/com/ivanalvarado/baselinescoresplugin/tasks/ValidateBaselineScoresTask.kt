@@ -85,7 +85,8 @@ abstract class ValidateBaselineScoresTask : DefaultTask(),
                 throw RuntimeException("Baseline validation failed: ${result.message}")
             }
         } catch (e: BaselineProcessingException) {
-            handleError("Error validating baseline scores", e)
+            logger.error("Failed to validate baseline scores: ${e.message}", e)
+            throw e
         }
     }
 
@@ -122,13 +123,5 @@ abstract class ValidateBaselineScoresTask : DefaultTask(),
             useDefaultLintScoring = useDefaultLintScoring.get(),
             userScoringRules = userScoringRules.get()
         )
-    }
-
-    private fun handleError(message: String, exception: BaselineProcessingException) {
-        println("$message: ${exception.message}")
-        exception.cause?.let { cause ->
-            println("Caused by: ${cause.message}")
-        }
-        throw exception
     }
 }
